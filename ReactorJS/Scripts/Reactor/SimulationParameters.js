@@ -7,27 +7,27 @@ var Reactor;
             var redParticleType = new Reactor.ParticleType('red');
             redParticleType.color = '#F00';
             redParticleType.size = 5;
-            redParticleType.agitation = 0.000;
+            redParticleType.agitation = 350;
             redParticleType.mass = 1;
-            redParticleType.viscosity = 0.001;
+            redParticleType.viscosity = 2;
             var blueParticleType = new Reactor.ParticleType('blue');
             blueParticleType.color = '#00F';
             blueParticleType.size = 5;
-            blueParticleType.agitation = 0.000;
+            blueParticleType.agitation = 350;
             blueParticleType.mass = 1;
-            blueParticleType.viscosity = 0.001;
+            blueParticleType.viscosity = 2;
             this.particleTypes = {
             };
             this.particleTypes['red'] = redParticleType;
             this.particleTypes['blue'] = blueParticleType;
             this.particleGenerationScenario = new ParticleGenerationScenario();
             this.particleGenerationScenario.initialNbrParticles = {
-                'red': 100,
-                'blue': 100
+                'red': 250,
+                'blue': 250
             };
             this.wallsForce = {
                 range: 5,
-                amplitude: 0.005
+                amplitude: 2000
             };
             var defaultAttractiveForce = {
                 range: 5,
@@ -44,8 +44,8 @@ var Reactor;
                 }
             };
             var defaulRepulsiveForce = {
-                range: 10,
-                amplitude: 0.001
+                range: 20,
+                amplitude: 50
             };
             this.repulsiveForcesBetweenParticles = {
                 'red': {

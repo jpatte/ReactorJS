@@ -12,7 +12,7 @@ var App = (function () {
         }, 1000 / App.Framerate);
     };
     App.prototype.update = function () {
-        this.engine.update(1000 / App.Framerate);
+        this.engine.update(1 / App.Framerate);
     };
     App.prototype.draw = function () {
         this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);

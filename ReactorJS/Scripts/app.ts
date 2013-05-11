@@ -26,7 +26,7 @@ class App
 
     update(): void 
     {
-        this.engine.update(1000/App.Framerate);
+        this.engine.update(1/App.Framerate);
     }
 
     draw(): void 

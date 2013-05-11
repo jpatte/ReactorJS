@@ -152,20 +152,13 @@ var Reactor;
             var amplitude = force.amplitude;
             var dx = p1.x - p2.x;
             var dy = p1.y - p2.y;
-            var distance2 = dx * dx + dy * dy;
-            if(distance2 > range * range) {
+            var distance = Math.sqrt(dx * dx + dy * dy);
+            if(distance > range) {
                 return;
             }
-            if(dx >= 0) {
-                f.x += amplitude * (range - dx) / range;
-            } else {
-                f.x -= amplitude * (range + dx) / range;
-            }
-            if(dy >= 0) {
-                f.y += amplitude * (range - dy) / range;
-            } else {
-                f.y -= amplitude * (range + dy) / range;
-            }
+            var coeff = amplitude * (range - distance) / distance;
+            f.x += coeff * dx;
+            f.y += coeff * dy;
         };
         Engine.prototype.addInfluenceFromWalls = function (particle, f) {
             var range = this.parameters.wallsForce.range;
