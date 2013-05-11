@@ -186,6 +186,10 @@
     </Content>
     <TypeScriptCompile Include="Scripts\Reactor\Vector2.d.ts" />
     <TypeScriptCompile Include="Scripts\Utils\MathUtils.ts" />
+    <TypeScriptCompile Include="Scripts\Reactor\SimulationParameters.ts" />
+    <Content Include="Scripts\Reactor\SimulationParameters.js">
+      <DependentUpon>SimulationParameters.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\Utils\MathUtils.js">
       <DependentUpon>MathUtils.ts</DependentUpon>
     </Content>
@@ -245,6 +249,11 @@
   <ItemGroup>
     <Content Include="Scripts\Utils\MathUtils.js.map">
       <DependentUpon>MathUtils.ts</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\Reactor\SimulationParameters.js.map">
+      <DependentUpon>SimulationParameters.ts</DependentUpon>
     </Content>
   </ItemGroup>
   <PropertyGroup>

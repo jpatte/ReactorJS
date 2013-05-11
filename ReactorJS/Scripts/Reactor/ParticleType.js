@@ -1,8 +1,8 @@
 var Reactor;
 (function (Reactor) {
     var ParticleType = (function () {
-        function ParticleType(number) {
-            this.number = number;
+        function ParticleType(name) {
+            this.name = name;
             this.color = '#000';
             this.size = 5;
             this.agitation = 0.0005;

@@ -3,25 +3,24 @@
 /// <reference path="Vector2.d.ts" />
 /// <reference path="Area.ts" />
 /// <reference path="Particle.ts" />
+/// <reference path="SimulationParameters.ts" />
 
 module Reactor
 {
     export class Engine
     {
+        parameters: SimulationParameters;
+        areasSize: number;
+        nbrAreaRows: number;
+        nbrAreaColumns: number;
+
         particles: ParticleSet;
         areas: Area[];
         limbo: Area;
-        sceneWidth: number;
-        sceneHeight: number;
 
-        nbrAreaRows: number;
-        nbrAreaColumns: number;
-        areasSize: number;
-
-        constructor(sceneWidth: number, sceneHeight: number)
+        constructor(parameters: SimulationParameters)
         {
-            this.sceneWidth = sceneWidth;
-            this.sceneHeight = sceneHeight;
+            this.parameters = parameters;
 
             this.splitSceneIntoAreas();
             this.createParticles();
@@ -48,9 +47,25 @@ module Reactor
 
         private splitSceneIntoAreas(): void
         {
-            this.areasSize = Math.ceil(10);
-            this.nbrAreaRows = Math.ceil(this.sceneHeight / this.areasSize) + 1;
-            this.nbrAreaColumns = Math.ceil(this.sceneWidth / this.areasSize) + 1;
+            // find max force range between particles
+            var maxRange = 0;
+            for(var pt1 in this.parameters.particleTypes)
+            {
+                for(var pt2 in this.parameters.particleTypes)
+                {
+                    var attractiveForceRange = this.parameters.attractiveForcesBetweenParticles[pt1][pt2].range;
+                    if(attractiveForceRange > maxRange)
+                        maxRange = attractiveForceRange;
+
+                    var repulsiveForceRange = this.parameters.repulsiveForcesBetweenParticles[pt1][pt2].range;
+                    if(repulsiveForceRange > maxRange)
+                        maxRange = repulsiveForceRange;
+                }
+            }
+
+            this.areasSize = Math.ceil(maxRange);
+            this.nbrAreaRows = Math.ceil(this.parameters.sceneHeight / this.areasSize) + 1;
+            this.nbrAreaColumns = Math.ceil(this.parameters.sceneWidth / this.areasSize) + 1;
 
             this.areas = [];
             var counter = 0;
@@ -101,32 +116,34 @@ module Reactor
 
             return neighbors;
         }
-
-        private createParticles(): void
-        {
-            var particleType1 = new ParticleType(1);
-            particleType1.color = '#F00';
-            var particleType2 = new ParticleType(2);
-            particleType2.color = '#00F';
-
-            this.particles = new ParticleSet();
-            for(var i = 0; i < 200; i++)
-            {
-                var particle = new Particle(
-                    MathUtils.random() > 0.5 ? particleType2 : particleType1,
-                    MathUtils.random() * this.sceneWidth,
-                    MathUtils.random() * this.sceneHeight);
-
-                this.particles.push(particle);
-                this.onParticleMoved(particle);
-            }
-        }
         
         private computeAreaNumber(p: Vector2): number
         {
             var row = Math.floor(p.y / this.areasSize + 0.5);
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
+        }
+
+        private createParticles(): void
+        {
+            var width = this.parameters.sceneWidth;
+            var height = this.parameters.sceneHeight;
+            this.particles = new ParticleSet();
+
+            for(var typeName in this.parameters.particleTypes)
+            {
+                var particleType = this.parameters.particleTypes[typeName];
+                var nbrParticlesToCreate = this.parameters.particleGenerationScenario.initialNbrParticles[typeName];
+                for(var i = 0; i < nbrParticlesToCreate; i++)
+                {
+                    var particle = new Particle(particleType,
+                        MathUtils.random() * width,
+                        MathUtils.random() * height);
+
+                    this.particles.push(particle);
+                    this.onParticleMoved(particle);
+                }
+            }
         }
 
         private updateParticlePosition(particle: Particle, dt: number): void
@@ -189,42 +206,41 @@ module Reactor
         private addInfluenceFromParticle(p1: Particle, p2: Particle, f: Vector2): void
         {
             // repulsive force
-            var range = 10;
-            var range2 = range * range;
-            var maxForce = 0.001;
+            var force = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
+            var range = force.range;
+            var amplitude = force.amplitude;
 
             var dx = p1.x - p2.x;
             var dy = p1.y - p2.y;
             var distance2 = dx * dx + dy * dy;
-
-            if(distance2 > range2)
+            if(distance2 > range * range)
                 return;
 
             if(dx >= 0)
-                f.x += maxForce * (range - dx) / range;
+                f.x += amplitude * (range - dx) / range;
             else
-                f.x += - maxForce * (range + dx) / range;
+                f.x -= amplitude * (range + dx) / range;
 
             if(dy >= 0)
-                f.y += maxForce * (range - dy) / range;
+                f.y += amplitude * (range - dy) / range;
             else
-                f.y += - maxForce * (range + dy) / range;
+                f.y -= amplitude * (range + dy) / range;
         }
 
         private addInfluenceFromWalls(particle: Particle, f: Vector2): void
         {
-            var range = 5;
-            var maxForce = 0.005;
+            var range = this.parameters.wallsForce.range;
+            var amplitude = this.parameters.wallsForce.amplitude;
 
             if(particle.x <= range)
-                f.x = maxForce * (range - particle.x) / range;
-            else if(particle.x >= this.sceneWidth - range)
-                f.x = maxForce * (this.sceneWidth - range - particle.x) / range;
+                f.x = amplitude * (range - particle.x) / range;
+            else if(particle.x >= this.parameters.sceneWidth - range)
+                f.x = amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
 
             if(particle.y <= range)
-                f.y = maxForce * (range - particle.y) / range;
-            else if(particle.y >= this.sceneHeight - range)
-                f.y = maxForce * (this.sceneHeight - range - particle.y) / range;
+                f.y = amplitude * (range - particle.y) / range;
+            else if(particle.y >= this.parameters.sceneHeight - range)
+                f.y = amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
         }
     }
 }

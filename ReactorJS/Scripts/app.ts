@@ -3,36 +3,35 @@
 
 class App
 {
-    static FPS = 30;
+    static Framerate = 30;
 
     scene: CanvasRenderingContext2D;
-    sceneWidth: number;
-    sceneHeight: number;
 
+    parameters: Reactor.SimulationParameters;
     engine: Reactor.Engine;
 
     start(canvas: JQuery): void
     {
-        this.scene = canvas.get(0).getContext("2d");
-        this.sceneWidth = canvas.width();
-        this.sceneHeight = canvas.height();
+        this.parameters = new Reactor.SimulationParameters();
 
-        this.engine = new Reactor.Engine(this.sceneWidth, this.sceneHeight);
+        this.scene = canvas.get(0).getContext("2d");
+
+        this.engine = new Reactor.Engine(this.parameters);
 
         setInterval(() => {
           this.update();
           this.draw();
-        }, 1000/App.FPS);
+        }, 1000/App.Framerate);
     }
 
     update(): void 
     {
-        this.engine.update(1000/App.FPS);
+        this.engine.update(1000/App.Framerate);
     }
 
     draw(): void 
     {
-        this.scene.clearRect(0, 0, this.sceneWidth, this.sceneHeight);
+        this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
   
         this.engine.render(this.scene);
     }
