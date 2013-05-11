@@ -7,6 +7,20 @@ var Reactor;
             this.splitSceneIntoAreas();
             this.createParticles();
         }
+        Engine.prototype.update = function (dt) {
+            var _this = this;
+            this.particles.each(function (p) {
+                _this.updateParticlePosition(p, dt);
+                _this.onParticleMoved(p);
+            });
+        };
+        Engine.prototype.render = function (scene) {
+            this.particles.each(function (p) {
+                scene.fillStyle = p.type.color;
+                var size = p.type.size;
+                scene.fillRect(p.x - size / 2, p.y - size / 2, p.type.size, p.type.size);
+            });
+        };
         Engine.prototype.splitSceneIntoAreas = function () {
             this.areasSize = Math.ceil(10);
             this.nbrAreaRows = Math.ceil(this.sceneHeight / this.areasSize) + 1;
@@ -76,20 +90,6 @@ var Reactor;
             var row = Math.floor(p.y / this.areasSize + 0.5);
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
-        };
-        Engine.prototype.update = function (dt) {
-            var _this = this;
-            this.particles.each(function (p) {
-                _this.updateParticlePosition(p, dt);
-                _this.onParticleMoved(p);
-            });
-        };
-        Engine.prototype.render = function (scene) {
-            this.particles.each(function (p) {
-                scene.fillStyle = p.type.color;
-                var size = p.type.size;
-                scene.fillRect(p.x - size / 2, p.y - size / 2, p.type.size, p.type.size);
-            });
         };
         Engine.prototype.updateParticlePosition = function (particle, dt) {
             var f = this.computeInfluenceOnParticle(particle);

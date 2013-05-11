@@ -27,6 +27,25 @@ module Reactor
             this.createParticles();
         }
 
+        update(dt: number): void
+        {
+            this.particles.each((p: Particle) => 
+            {
+                this.updateParticlePosition(p, dt);
+                this.onParticleMoved(p);
+            });
+        }
+        
+        render(scene: CanvasRenderingContext2D): void
+        {
+            this.particles.each((p: Particle) => 
+            {
+                scene.fillStyle = p.type.color;
+                var size = p.type.size;
+                scene.fillRect(p.x - size/2, p.y - size/2, p.type.size, p.type.size);
+            });
+        }
+
         private splitSceneIntoAreas(): void
         {
             this.areasSize = Math.ceil(10);
@@ -108,25 +127,6 @@ module Reactor
             var row = Math.floor(p.y / this.areasSize + 0.5);
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
-        }
-
-        update(dt: number): void
-        {
-            this.particles.each((p: Particle) => 
-            {
-                this.updateParticlePosition(p, dt);
-                this.onParticleMoved(p);
-            });
-        }
-        
-        render(scene: CanvasRenderingContext2D): void
-        {
-            this.particles.each((p: Particle) => 
-            {
-                scene.fillStyle = p.type.color;
-                var size = p.type.size;
-                scene.fillRect(p.x - size/2, p.y - size/2, p.type.size, p.type.size);
-            });
         }
 
         private updateParticlePosition(particle: Particle, dt: number): void
