@@ -1,0 +1,27 @@
+﻿@model dynamic
+
+@{
+  ViewBag.Title = "Reactor JS";
+  Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section includes 
+{
+}
+
+<canvas id="scene" width='480' height='320'>
+</canvas>
+
+@section scripts
+{
+  @Scripts.Render("~/lib/jquery")
+  @Scripts.Render("~/lib/underscore")
+@*  @Scripts.Render("~/lib/knockout")*@
+  @Scripts.Render("~/src/app")
+
+  <script type="text/javascript">
+    $(document).ready(function () {
+      new App().start($('#scene'));
+    });
+  </script>
+}
