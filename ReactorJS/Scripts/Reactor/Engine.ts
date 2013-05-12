@@ -53,13 +53,13 @@ module Reactor
             {
                 for(var pt2 in this.parameters.particleTypes)
                 {
-                    var attractiveForceRange = this.parameters.attractiveForcesBetweenParticles[pt1][pt2].range;
-                    if(attractiveForceRange > maxRange)
-                        maxRange = attractiveForceRange;
+                    var attractiveForce = this.parameters.attractiveForcesBetweenParticles[pt1][pt2];
+                    if(attractiveForce.amplitude != 0 && attractiveForce.range > maxRange)
+                        maxRange = attractiveForce.range;
 
-                    var repulsiveForceRange = this.parameters.repulsiveForcesBetweenParticles[pt1][pt2].range;
-                    if(repulsiveForceRange > maxRange)
-                        maxRange = repulsiveForceRange;
+                    var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[pt1][pt2];
+                    if(repulsiveForce.amplitude != 0 && repulsiveForce.range > maxRange)
+                        maxRange = repulsiveForce.range;
                 }
             }
 
@@ -209,18 +209,26 @@ module Reactor
 
         private addInfluenceFromParticle(p1: Particle, p2: Particle, f: Vector2): void
         {
-            // repulsive force
-            var force = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-            var range = force.range;
-            var amplitude = force.amplitude;
+            var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
+            this.addInfluenceFromForce(p1, p2, repulsiveForce, f);
 
-            var dx = p1.x - p2.x;
-            var dy = p1.y - p2.y;
+            var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
+            this.addInfluenceFromForce(p1, p2, attractiveForce, f);
+        }
+
+        private addInfluenceFromForce(forceTarget: Vector2, forceOrigin: Vector2, force: LinearForceDescription, f: Vector2): void
+        {
+            if(force.amplitude == 0)
+                return;
+
+            var dx = forceTarget.x - forceOrigin.x;
+            var dy = forceTarget.y - forceOrigin.y;
             var distance = Math.sqrt(dx * dx + dy * dy);
+            var range = force.range;
             if(distance > range)
                 return;
 
-            var coeff = amplitude * (range - distance) / distance;
+            var coeff = force.amplitude * (range - distance) / range;
             f.x += coeff * dx;
             f.y += coeff * dy;
         }
