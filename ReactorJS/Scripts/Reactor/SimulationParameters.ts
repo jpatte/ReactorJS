@@ -7,6 +7,7 @@ module Reactor
     {
         sceneWidth: number;
         sceneHeight: number;
+        heatLevel: number;
         particleTypes: { [name: string]: ParticleType; };
         particleGenerationScenario: ParticleGenerationScenario;
         wallsForce: LinearForceDescription;
@@ -19,18 +20,19 @@ module Reactor
             this.sceneWidth = 480;
             this.sceneHeight = 320;
 
+            // global values
+            this.heatLevel = 500;
+
             // particle types
             var redParticleType = new ParticleType('red');
             redParticleType.color = '#F00';
             redParticleType.size = 5;
-            redParticleType.agitation = 350;
             redParticleType.mass = 1;
             redParticleType.viscosity = 2;
 
             var blueParticleType = new ParticleType('blue');
             blueParticleType.color = '#00F';
             blueParticleType.size = 5;
-            blueParticleType.agitation = 350;
             blueParticleType.mass = 1;
             blueParticleType.viscosity = 2;
 
@@ -41,8 +43,8 @@ module Reactor
             // particles generation
             this.particleGenerationScenario = new ParticleGenerationScenario();
             this.particleGenerationScenario.initialNbrParticles = {
-                'red': 250,
-                'blue': 250,
+                'red': 150,
+                'blue': 150,
             };
 
             // walls

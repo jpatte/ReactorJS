@@ -4,16 +4,15 @@ var Reactor;
         function SimulationParameters() {
             this.sceneWidth = 480;
             this.sceneHeight = 320;
+            this.heatLevel = 500;
             var redParticleType = new Reactor.ParticleType('red');
             redParticleType.color = '#F00';
             redParticleType.size = 5;
-            redParticleType.agitation = 350;
             redParticleType.mass = 1;
             redParticleType.viscosity = 2;
             var blueParticleType = new Reactor.ParticleType('blue');
             blueParticleType.color = '#00F';
             blueParticleType.size = 5;
-            blueParticleType.agitation = 350;
             blueParticleType.mass = 1;
             blueParticleType.viscosity = 2;
             this.particleTypes = {
@@ -22,8 +21,8 @@ var Reactor;
             this.particleTypes['blue'] = blueParticleType;
             this.particleGenerationScenario = new ParticleGenerationScenario();
             this.particleGenerationScenario.initialNbrParticles = {
-                'red': 250,
-                'blue': 250
+                'red': 150,
+                'blue': 150
             };
             this.wallsForce = {
                 range: 5,

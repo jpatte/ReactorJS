@@ -130,8 +130,8 @@ var Reactor;
         };
         Engine.prototype.computeInfluenceOnParticle = function (particle) {
             var f = {
-                x: particle.type.agitation * MathUtils.random2() - particle.type.viscosity * particle.vx,
-                y: particle.type.agitation * MathUtils.random2() - particle.type.viscosity * particle.vy
+                x: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx,
+                y: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy
             };
             this.addInfluenceFromOtherParticles(particle, f);
             this.addInfluenceFromWalls(particle, f);
