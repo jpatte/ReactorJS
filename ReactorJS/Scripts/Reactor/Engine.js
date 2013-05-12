@@ -21,6 +21,7 @@ var Reactor;
             });
         };
         Engine.prototype.splitSceneIntoAreas = function () {
+            var _this = this;
             var maxRange = 0;
             for(var pt1 in this.parameters.particleTypes) {
                 for(var pt2 in this.parameters.particleTypes) {
@@ -44,18 +45,19 @@ var Reactor;
                     this.areas.push(new Reactor.Area(counter++, r, c));
                 }
             }
+            _.each(this.areas, function (a) {
+                return a.surroundingAreas = _this.getSurroundingAreas(a.row, a.column);
+            });
             this.limbo = new Reactor.Area(-1, -1, -1);
+            this.limbo.surroundingAreas = [];
         };
         Engine.prototype.getSurroundingAreas = function (row, column) {
             var _this = this;
-            var neighbors = [];
-            if(row < 0) {
-                return neighbors;
-            }
             var hasLeft = (column > 0);
             var hasTop = (row > 0);
             var hasRight = (column < this.nbrAreaColumns - 1);
             var hasBottom = (row < this.nbrAreaRows - 1);
+            var neighbors = [];
             var addNeighbor = function (r, c) {
                 return neighbors.push(_this.areas[r * _this.nbrAreaColumns + c]);
             };
@@ -137,8 +139,7 @@ var Reactor;
         };
         Engine.prototype.addInfluenceFromOtherParticles = function (p1, f) {
             var _this = this;
-            var surroundingAreas = this.getSurroundingAreas(p1.currentArea.row, p1.currentArea.column);
-            _.each(surroundingAreas, function (area) {
+            _.each(p1.currentArea.surroundingAreas, function (area) {
                 area.particles.each(function (p2) {
                     if(p1.id != p2.id) {
                         _this.addInfluenceFromParticle(p1, p2, f);

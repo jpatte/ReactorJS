@@ -63,28 +63,33 @@ module Reactor
                 }
             }
 
+            // determine areas count & size 
             this.areasSize = Math.ceil(maxRange);
             this.nbrAreaRows = Math.ceil(this.parameters.sceneHeight / this.areasSize) + 1;
             this.nbrAreaColumns = Math.ceil(this.parameters.sceneWidth / this.areasSize) + 1;
 
+            // create areas
             this.areas = [];
             var counter = 0;
             for(var r = 0; r < this.nbrAreaRows; r++)
                 for(var c = 0; c < this.nbrAreaColumns; c++)
                     this.areas.push(new Area(counter++, r, c));
+
+            // pre-calculate surrounding areas
+            _.each(this.areas, (a: Area) => a.surroundingAreas = this.getSurroundingAreas(a.row, a.column));
+
+            // create special 'limbo' area for the region outside the scene
             this.limbo = new Area(-1, -1, -1);
+            this.limbo.surroundingAreas = [];
         }
         
         private getSurroundingAreas(row: number, column: number): Area[]
         {
-            var neighbors = [];
-            if(row < 0)
-                return neighbors;
-
             var hasLeft = (column > 0);
             var hasTop = (row > 0);
             var hasRight = (column < this.nbrAreaColumns - 1);
             var hasBottom = (row < this.nbrAreaRows - 1);
+            var neighbors = [];
             var addNeighbor = (r: number, c: number) => neighbors.push(this.areas[r * this.nbrAreaColumns + c]);
 
             // top row
@@ -192,8 +197,7 @@ module Reactor
 
         private addInfluenceFromOtherParticles(p1: Particle, f: Vector2): void
         {
-            var surroundingAreas = this.getSurroundingAreas(p1.currentArea.row, p1.currentArea.column);
-            _.each(surroundingAreas, (area: Area) =>
+            _.each(p1.currentArea.surroundingAreas, (area: Area) =>
             {
                 area.particles.each((p2: Particle) => 
                 {
