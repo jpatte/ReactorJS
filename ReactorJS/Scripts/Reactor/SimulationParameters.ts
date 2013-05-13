@@ -21,8 +21,8 @@ module Reactor
         constructor()
         {
             // scene dimensions
-            this.sceneWidth = 1000;
-            this.sceneHeight = 600;
+            this.sceneWidth = 480;
+            this.sceneHeight = 320;
 
             // global values
             this.heatLevel = 500;
@@ -58,8 +58,8 @@ module Reactor
             this.particleGenerationScenario = new ParticleGenerationScenario();
             this.particleGenerationScenario.initialNbrParticles = 
             {
-                'red': 750,
-                'blue': 750,
+                'red': 150,
+                'blue': 150,
             };
 
             // walls

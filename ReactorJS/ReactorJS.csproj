@@ -173,6 +173,10 @@
     <TypeScriptCompile Include="Scripts\Reactor\BondDescription.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\LinearForceDescription.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\ParticleGenerationScenario.ts" />
+    <TypeScriptCompile Include="Scripts\Reactor\BondEndPoint.ts" />
+    <Content Include="Scripts\Reactor\BondEndPoint.js">
+      <DependentUpon>BondEndPoint.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\Reactor\Engine.js">
       <DependentUpon>Engine.ts</DependentUpon>
     </Content>
@@ -183,6 +187,10 @@
     <TypeScriptCompile Include="Scripts\Reactor\ParticleSet.ts" />
     <Content Include="Scripts\Reactor\ParticleGenerationScenario.js">
       <DependentUpon>ParticleGenerationScenario.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Reactor\ParticleGenerator.ts" />
+    <Content Include="Scripts\Reactor\ParticleGenerator.js">
+      <DependentUpon>ParticleGenerator.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Reactor\ParticleSet.js">
       <DependentUpon>ParticleSet.ts</DependentUpon>
@@ -257,6 +265,16 @@
   <ItemGroup>
     <Content Include="Scripts\Reactor\SimulationParameters.js.map">
       <DependentUpon>SimulationParameters.ts</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\Reactor\BondEndPoint.js.map">
+      <DependentUpon>BondEndPoint.ts</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\Reactor\ParticleGenerator.js.map">
+      <DependentUpon>ParticleGenerator.ts</DependentUpon>
     </Content>
   </ItemGroup>
   <PropertyGroup>

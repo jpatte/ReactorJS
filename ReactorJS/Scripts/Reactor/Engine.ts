@@ -4,6 +4,7 @@
 /// <reference path="Particle.ts" />
 /// <reference path="SimulationParameters.ts" />
 /// <reference path="Vector2.ts" />
+/// <reference path="ParticleGenerator.ts" />
 
 module Reactor
 {
@@ -14,6 +15,7 @@ module Reactor
         nbrAreaRows: number;
         nbrAreaColumns: number;
 
+        generator: ParticleGenerator;
         particles: ParticleSet;
         areas: Area[];
         limbo: Area;
@@ -22,12 +24,21 @@ module Reactor
         {
             this.parameters = parameters;
 
+            this.particles = new ParticleSet();
+            this.generator = new ParticleGenerator(parameters);
+            this.generator.newParticle = (p: Particle) =>
+            {
+                this.particles.push(p);
+                this.onParticleMoved(p);
+            };
+
             this.splitSceneIntoAreas();
-            this.createParticles();
         }
 
         update(dt: number): void
         {
+            this.generator.update();
+
             this.particles.each((p: Particle) => 
             {
                 this.updateParticlePosition(p, dt);
@@ -150,28 +161,6 @@ module Reactor
             var row = Math.floor(p.y / this.areasSize + 0.5);
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
-        }
-
-        private createParticles(): void
-        {
-            var width = this.parameters.sceneWidth;
-            var height = this.parameters.sceneHeight;
-            this.particles = new ParticleSet();
-
-            for(var typeName in this.parameters.particleTypes)
-            {
-                var particleType = this.parameters.particleTypes[typeName];
-                var nbrParticlesToCreate = this.parameters.particleGenerationScenario.initialNbrParticles[typeName];
-                for(var i = 0; i < nbrParticlesToCreate; i++)
-                {
-                    var particle = new Particle(particleType,
-                        MathUtils.random() * width,
-                        MathUtils.random() * height);
-
-                    this.particles.push(particle);
-                    this.onParticleMoved(particle);
-                }
-            }
         }
 
         private updateParticlePosition(particle: Particle, dt: number): void

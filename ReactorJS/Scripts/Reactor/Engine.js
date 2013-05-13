@@ -2,12 +2,19 @@ var Reactor;
 (function (Reactor) {
     var Engine = (function () {
         function Engine(parameters) {
+            var _this = this;
             this.parameters = parameters;
+            this.particles = new Reactor.ParticleSet();
+            this.generator = new Reactor.ParticleGenerator(parameters);
+            this.generator.newParticle = function (p) {
+                _this.particles.push(p);
+                _this.onParticleMoved(p);
+            };
             this.splitSceneIntoAreas();
-            this.createParticles();
         }
         Engine.prototype.update = function (dt) {
             var _this = this;
+            this.generator.update();
             this.particles.each(function (p) {
                 _this.updateParticlePosition(p, dt);
                 _this.onParticleMoved(p);
@@ -111,20 +118,6 @@ var Reactor;
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
         };
-        Engine.prototype.createParticles = function () {
-            var width = this.parameters.sceneWidth;
-            var height = this.parameters.sceneHeight;
-            this.particles = new Reactor.ParticleSet();
-            for(var typeName in this.parameters.particleTypes) {
-                var particleType = this.parameters.particleTypes[typeName];
-                var nbrParticlesToCreate = this.parameters.particleGenerationScenario.initialNbrParticles[typeName];
-                for(var i = 0; i < nbrParticlesToCreate; i++) {
-                    var particle = new Reactor.Particle(particleType, MathUtils.random() * width, MathUtils.random() * height);
-                    this.particles.push(particle);
-                    this.onParticleMoved(particle);
-                }
-            }
-        };
         Engine.prototype.updateParticlePosition = function (particle, dt) {
             var f = this.computeInfluenceOnParticle(particle);
             particle.vx += f.x / particle.type.mass * dt;
@@ -166,64 +159,72 @@ var Reactor;
             });
         };
         Engine.prototype.addInfluenceFromParticle = function (p1, p2, f) {
-            var bondType = null;
-            _.each(p1.bondEndPoints, function (endPoint) {
-                if(bondType == null && endPoint.otherParticle == p2) {
-                    bondType = endPoint.bondType;
-                }
+            var _this = this;
+            var activeBond = null;
+            var boundEndPoint = _.find(p1.bondEndPoints, function (endPoint) {
+                return endPoint.boundParticle == p2;
             });
+            if(boundEndPoint) {
+                activeBond = boundEndPoint.bond;
+            }
             var dx = p1.x - p2.x;
             var dy = p1.y - p2.y;
             var distance = Math.sqrt(dx * dx + dy * dy);
-            if(bondType) {
-                if(distance > bondType.maxRange) {
-                    _.each(p1.bondEndPoints, function (endPoint) {
-                        if(endPoint.bondType == bondType && endPoint.otherParticle == p2) {
-                            endPoint.otherParticle = null;
-                        }
-                    });
-                    _.each(p2.bondEndPoints, function (matchingEndPoint) {
-                        if(matchingEndPoint.bondType == bondType && matchingEndPoint.otherParticle == p1) {
-                            matchingEndPoint.otherParticle = null;
-                        }
-                    });
-                    bondType = null;
+            if(activeBond) {
+                if(distance > activeBond.maxRange) {
+                    var otherEndPoint = boundEndPoint.boundEndPoint;
+                    otherEndPoint.bond = null;
+                    otherEndPoint.boundParticle = null;
+                    otherEndPoint.boundEndPoint = null;
+                    boundEndPoint.bond = null;
+                    boundEndPoint.boundParticle = null;
+                    boundEndPoint.boundEndPoint = null;
+                    activeBond = null;
                 }
             } else {
                 _.each(p1.bondEndPoints, function (endPoint) {
-                    if(!bondType && endPoint.otherParticle == null) {
-                        var matchingEndPoint = _.find(p2.bondEndPoints, function (ep) {
-                            return ep.otherParticle == null && ep.bondType == endPoint.bondType;
-                        });
-                        if(matchingEndPoint) {
-                            if(distance <= endPoint.bondType.maxRange) {
-                                bondType = endPoint.bondType;
-                                endPoint.otherParticle = p2;
-                                matchingEndPoint.otherParticle = p1;
-                            }
-                        }
+                    if(activeBond || endPoint.isBound()) {
+                        return;
                     }
+                    _.each(p2.bondEndPoints, function (otherEndPoint) {
+                        if(activeBond || otherEndPoint.isBound()) {
+                            return;
+                        }
+                        var possibleBond = _this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];
+                        if(possibleBond && distance <= possibleBond.maxRange) {
+                            activeBond = possibleBond;
+                            endPoint.bond = activeBond;
+                            endPoint.boundParticle = p2;
+                            endPoint.boundEndPoint = otherEndPoint;
+                            otherEndPoint.bond = activeBond;
+                            otherEndPoint.boundParticle = p1;
+                            otherEndPoint.boundEndPoint = endPoint;
+                        }
+                    });
                 });
             }
-            var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-            this.addInfluenceFromForce(p1, p2, repulsiveForce, f);
-            var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-            this.addInfluenceFromForce(p1, p2, attractiveForce, f);
-        };
-        Engine.prototype.addInfluenceFromForce = function (forceTarget, forceOrigin, force, f) {
-            if(force.amplitude == 0) {
-                return;
+            if(activeBond) {
+                this.addInfluenceFromBond(p1, p2, distance, activeBond, f);
+            } else {
+                var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
+                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce, f);
+                var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
+                this.addInfluenceFromForce(p1, p2, distance, attractiveForce, f);
             }
-            var dx = forceTarget.x - forceOrigin.x;
-            var dy = forceTarget.y - forceOrigin.y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
+        };
+        Engine.prototype.addInfluenceFromForce = function (forceTarget, forceOrigin, distance, force, f) {
             var range = force.range;
-            if(distance > range) {
+            if(force.amplitude == 0 || distance > range) {
                 return;
             }
             var coeff = force.amplitude * (range - distance) / range;
-            f.x += coeff * dx;
-            f.y += coeff * dy;
+            f.x += coeff * (forceTarget.x - forceOrigin.x);
+            f.y += coeff * (forceTarget.y - forceOrigin.y);
+        };
+        Engine.prototype.addInfluenceFromBond = function (target, end, distance, bond, f) {
+            var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
+            f.x += coeff * (target.x - end.x);
+            f.y += coeff * (target.y - end.y);
         };
         Engine.prototype.addInfluenceFromWalls = function (particle, f) {
             var range = this.parameters.wallsForce.range;
