@@ -14,15 +14,33 @@ var Reactor;
             });
         };
         Engine.prototype.render = function (scene) {
+            scene.beginPath();
             this.particles.each(function (p) {
                 scene.fillStyle = p.type.color;
                 var size = p.type.size;
                 scene.fillRect(p.x - size / 2, p.y - size / 2, p.type.size, p.type.size);
+                _.each(p.bondEndPoints, function (ep) {
+                    if(ep.isBound() && p.id < ep.boundParticle.id) {
+                        scene.strokeStyle = ep.bond.color;
+                        scene.moveTo(p.x, p.y);
+                        scene.lineTo(ep.boundParticle.x, ep.boundParticle.y);
+                    }
+                });
             });
+            scene.closePath();
+            scene.stroke();
         };
         Engine.prototype.splitSceneIntoAreas = function () {
             var _this = this;
             var maxRange = 0;
+            for(var ep1 in this.parameters.possibleBondsBetweenEndPoints) {
+                for(var ep2 in this.parameters.possibleBondsBetweenEndPoints[ep1]) {
+                    var bond = this.parameters.possibleBondsBetweenEndPoints[ep1][ep2];
+                    if(bond && bond.maxRange > maxRange) {
+                        maxRange = bond.maxRange;
+                    }
+                }
+            }
             for(var pt1 in this.parameters.particleTypes) {
                 for(var pt2 in this.parameters.particleTypes) {
                     var attractiveForce = this.parameters.attractiveForcesBetweenParticles[pt1][pt2];
@@ -35,7 +53,7 @@ var Reactor;
                     }
                 }
             }
-            this.areasSize = Math.ceil(maxRange);
+            this.areasSize = Math.ceil(maxRange + 5);
             this.nbrAreaRows = Math.ceil(this.parameters.sceneHeight / this.areasSize) + 1;
             this.nbrAreaColumns = Math.ceil(this.parameters.sceneWidth / this.areasSize) + 1;
             this.areas = [];
@@ -148,6 +166,45 @@ var Reactor;
             });
         };
         Engine.prototype.addInfluenceFromParticle = function (p1, p2, f) {
+            var bondType = null;
+            _.each(p1.bondEndPoints, function (endPoint) {
+                if(bondType == null && endPoint.otherParticle == p2) {
+                    bondType = endPoint.bondType;
+                }
+            });
+            var dx = p1.x - p2.x;
+            var dy = p1.y - p2.y;
+            var distance = Math.sqrt(dx * dx + dy * dy);
+            if(bondType) {
+                if(distance > bondType.maxRange) {
+                    _.each(p1.bondEndPoints, function (endPoint) {
+                        if(endPoint.bondType == bondType && endPoint.otherParticle == p2) {
+                            endPoint.otherParticle = null;
+                        }
+                    });
+                    _.each(p2.bondEndPoints, function (matchingEndPoint) {
+                        if(matchingEndPoint.bondType == bondType && matchingEndPoint.otherParticle == p1) {
+                            matchingEndPoint.otherParticle = null;
+                        }
+                    });
+                    bondType = null;
+                }
+            } else {
+                _.each(p1.bondEndPoints, function (endPoint) {
+                    if(!bondType && endPoint.otherParticle == null) {
+                        var matchingEndPoint = _.find(p2.bondEndPoints, function (ep) {
+                            return ep.otherParticle == null && ep.bondType == endPoint.bondType;
+                        });
+                        if(matchingEndPoint) {
+                            if(distance <= endPoint.bondType.maxRange) {
+                                bondType = endPoint.bondType;
+                                endPoint.otherParticle = p2;
+                                matchingEndPoint.otherParticle = p1;
+                            }
+                        }
+                    }
+                });
+            }
             var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
             this.addInfluenceFromForce(p1, p2, repulsiveForce, f);
             var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];

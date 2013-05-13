@@ -1,5 +1,8 @@
 /// <reference path="../Library/all.d.ts" />
-/// <reference path="ParticleSet.ts" />
+/// <reference path="BondDescription.ts" />
+/// <reference path="ParticleType.ts" />
+/// <reference path="LinearForceDescription.ts" />
+/// <reference path="ParticleGenerationScenario.ts" />
 
 module Reactor
 {
@@ -9,83 +12,113 @@ module Reactor
         sceneHeight: number;
         heatLevel: number;
         particleTypes: { [name: string]: ParticleType; };
+        possibleBondsBetweenEndPoints: { [ep1: string]: { [ep2: string]: BondDescription; }; };
         particleGenerationScenario: ParticleGenerationScenario;
-        wallsForce: LinearForceDescription;
         attractiveForcesBetweenParticles: { [pt1: string]: { [pt2: string]: LinearForceDescription; }; };
         repulsiveForcesBetweenParticles: { [pt1: string]: { [pt2: string]: LinearForceDescription; }; };
+        wallsForce: LinearForceDescription;
 
         constructor()
         {
             // scene dimensions
-            this.sceneWidth = 480;
-            this.sceneHeight = 320;
+            this.sceneWidth = 1000;
+            this.sceneHeight = 600;
 
             // global values
             this.heatLevel = 500;
 
             // particle types
-            var redParticleType = new ParticleType('red');
-            redParticleType.color = '#F00';
-            redParticleType.size = 5;
-            redParticleType.mass = 1;
-            redParticleType.viscosity = 2;
+            var redParticleType: ParticleType =
+            {
+                name: 'red',
+                color: '#F00',
+                size: 5,
+                mass: 1,
+                viscosity: 2,
+                bondEndPointNames: ['r']
+            };
 
-            var blueParticleType = new ParticleType('blue');
-            blueParticleType.color = '#00F';
-            blueParticleType.size = 5;
-            blueParticleType.mass = 1;
-            blueParticleType.viscosity = 2;
+            var blueParticleType: ParticleType =
+            {
+                name: 'blue',
+                color: '#00F',
+                size: 5,
+                mass: 1,
+                viscosity: 2,
+                bondEndPointNames: ['b']
+            };
 
-            this.particleTypes = {};
-            this.particleTypes['red'] = redParticleType;
-            this.particleTypes['blue'] = blueParticleType;
+            this.particleTypes = 
+            {
+                'red': redParticleType,
+                'blue': blueParticleType,
+            };
 
             // particles generation
             this.particleGenerationScenario = new ParticleGenerationScenario();
-            this.particleGenerationScenario.initialNbrParticles = {
-                'red': 150,
-                'blue': 150,
+            this.particleGenerationScenario.initialNbrParticles = 
+            {
+                'red': 750,
+                'blue': 750,
             };
 
             // walls
             this.wallsForce = { range: 5, amplitude: 2000 };
 
+            // possible bonds
+            var defaultBond: BondDescription = 
+            {
+                color: '#000',
+                amplitude: 50,
+                neutralRange: 20,
+                maxRange: 30,
+            };
+
+            this.possibleBondsBetweenEndPoints =
+            {
+                'r': 
+                {     
+                    'r': null,
+                    'b': defaultBond,
+                },
+                'b': 
+                {     
+                    'r': defaultBond,
+                    'b': null,
+                },
+            };
+
             // attractive forces
-            var defaultAttractiveForce = { range: 5, amplitude: 0 };
-            this.attractiveForcesBetweenParticles = {
-                'red': {     
+            var defaultAttractiveForce = { range: 25, amplitude: 0 };
+            this.attractiveForcesBetweenParticles = 
+            {
+                'red': 
+                {     
                     'red': defaultAttractiveForce,
                     'blue': defaultAttractiveForce,
                 },
-                'blue': {     
+                'blue': 
+                {     
                     'red': defaultAttractiveForce,
                     'blue': defaultAttractiveForce,
                 },
             };
 
             // repulsive forces
-            var defaulRepulsiveForce = { range: 20, amplitude: 50 };
-            this.repulsiveForcesBetweenParticles = {
-                'red': {     
-                    'red': defaulRepulsiveForce,
-                    'blue': defaulRepulsiveForce,
+            var defaultRepulsiveForce = { range: 15, amplitude: 50 };
+            this.repulsiveForcesBetweenParticles = 
+            {
+                'red': 
+                {     
+                    'red': defaultRepulsiveForce,
+                    'blue': defaultRepulsiveForce,
                 },
-                'blue': {     
-                    'red': defaulRepulsiveForce,
-                    'blue': defaulRepulsiveForce,
+                'blue': 
+                {     
+                    'red': defaultRepulsiveForce,
+                    'blue': defaultRepulsiveForce,
                 },
             };
         }
-    }
-
-    export class ParticleGenerationScenario
-    {
-        initialNbrParticles: { [pt: string]: number; };
-    }
-
-    export interface LinearForceDescription
-    {
-        range: number;
-        amplitude: number;
     }
 }

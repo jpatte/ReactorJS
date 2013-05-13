@@ -1,9 +1,9 @@
 /// <reference path="../Library/all.d.ts" />
 /// <reference path="../Utils/MathUtils.ts" />
-/// <reference path="Vector2.d.ts" />
 /// <reference path="Area.ts" />
 /// <reference path="Particle.ts" />
 /// <reference path="SimulationParameters.ts" />
+/// <reference path="Vector2.ts" />
 
 module Reactor
 {
@@ -37,18 +37,41 @@ module Reactor
         
         render(scene: CanvasRenderingContext2D): void
         {
+            scene.beginPath();
             this.particles.each((p: Particle) => 
             {
                 scene.fillStyle = p.type.color;
                 var size = p.type.size;
                 scene.fillRect(p.x - size/2, p.y - size/2, p.type.size, p.type.size);
+
+                _.each(p.bondEndPoints, (ep: BondEndPoint) =>
+                {
+                    if(ep.isBound() && p.id < ep.boundParticle.id)
+                    {
+                        scene.strokeStyle = ep.bond.color;
+                        scene.moveTo(p.x, p.y);
+                        scene.lineTo(ep.boundParticle.x, ep.boundParticle.y);
+                    }
+                });
             });
+            scene.closePath();
+            scene.stroke();
         }
 
         private splitSceneIntoAreas(): void
         {
             // find max force range between particles
             var maxRange = 0;
+            for(var ep1 in this.parameters.possibleBondsBetweenEndPoints)
+            {
+                for(var ep2 in this.parameters.possibleBondsBetweenEndPoints[ep1])
+                {
+                    var bond = this.parameters.possibleBondsBetweenEndPoints[ep1][ep2];
+                    if(bond && bond.maxRange > maxRange)
+                        maxRange = bond.maxRange;
+                }
+            }
+
             for(var pt1 in this.parameters.particleTypes)
             {
                 for(var pt2 in this.parameters.particleTypes)
@@ -64,7 +87,7 @@ module Reactor
             }
 
             // determine areas count & size 
-            this.areasSize = Math.ceil(maxRange);
+            this.areasSize = Math.ceil(maxRange + 5);
             this.nbrAreaRows = Math.ceil(this.parameters.sceneHeight / this.areasSize) + 1;
             this.nbrAreaColumns = Math.ceil(this.parameters.sceneWidth / this.areasSize) + 1;
 
@@ -209,28 +232,99 @@ module Reactor
 
         private addInfluenceFromParticle(p1: Particle, p2: Particle, f: Vector2): void
         {
-            var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-            this.addInfluenceFromForce(p1, p2, repulsiveForce, f);
+            // are these particles linked together ?
+            var activeBond: BondDescription = null;
+            var boundEndPoint: BondEndPoint = _.find(p1.bondEndPoints, (endPoint: BondEndPoint) => endPoint.boundParticle == p2);
 
-            var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-            this.addInfluenceFromForce(p1, p2, attractiveForce, f);
+            if(boundEndPoint)
+                activeBond = boundEndPoint.bond;
+
+            var dx = p1.x - p2.x;
+            var dy = p1.y - p2.y;
+            var distance = Math.sqrt(dx * dx + dy * dy);
+
+            if(activeBond)
+            {
+                // these particles are linked.
+                // are they close enough to maintain the bond ?
+                if(distance > activeBond.maxRange)
+                {
+                    // nope, let's break the bond
+                    var otherEndPoint = boundEndPoint.boundEndPoint;
+                    otherEndPoint.bond = null;
+                    otherEndPoint.boundParticle = null;
+                    otherEndPoint.boundEndPoint = null;
+                    boundEndPoint.bond = null;
+                    boundEndPoint.boundParticle = null;
+                    boundEndPoint.boundEndPoint = null;
+                    activeBond = null;
+                }
+            }
+            else
+            {
+                // these particles are not linked.
+                // do they both have a free matching endpoint ?
+                _.each(p1.bondEndPoints, (endPoint: BondEndPoint) =>
+                {
+                    if(activeBond || endPoint.isBound())
+                        return;
+
+                    _.each(p2.bondEndPoints, (otherEndPoint: BondEndPoint) =>
+                    {
+                        if(activeBond || otherEndPoint.isBound())
+                            return;
+
+                        var possibleBond: BondDescription =
+                            this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];
+
+                        if(possibleBond && distance <= possibleBond.maxRange)
+                        {
+                            // the particles have matching endpoints and are close enough to be bound.
+                            // so let's bind them
+                            activeBond = possibleBond;
+                            endPoint.bond = activeBond;
+                            endPoint.boundParticle = p2;
+                            endPoint.boundEndPoint = otherEndPoint;
+                            otherEndPoint.bond = activeBond;
+                            otherEndPoint.boundParticle = p1;
+                            otherEndPoint.boundEndPoint = endPoint;
+                        }
+                    });
+                });
+            }
+
+            if(activeBond)
+            {
+                // apply effect of the active bond
+                this.addInfluenceFromBond(p1, p2, distance, activeBond, f);
+            }
+            else
+            {
+                // apply repulsive/attractive forces
+                var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
+                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce, f);
+
+                var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
+                this.addInfluenceFromForce(p1, p2, distance, attractiveForce, f);
+            }
         }
 
-        private addInfluenceFromForce(forceTarget: Vector2, forceOrigin: Vector2, force: LinearForceDescription, f: Vector2): void
+        private addInfluenceFromForce(forceTarget: Vector2, forceOrigin: Vector2, distance: number, force: LinearForceDescription, f: Vector2): void
         {
-            if(force.amplitude == 0)
-                return;
-
-            var dx = forceTarget.x - forceOrigin.x;
-            var dy = forceTarget.y - forceOrigin.y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
             var range = force.range;
-            if(distance > range)
+            if(force.amplitude == 0 || distance > range)
                 return;
 
             var coeff = force.amplitude * (range - distance) / range;
-            f.x += coeff * dx;
-            f.y += coeff * dy;
+            f.x += coeff * (forceTarget.x - forceOrigin.x);
+            f.y += coeff * (forceTarget.y - forceOrigin.y);
+        }
+
+        private addInfluenceFromBond(target: Vector2, end: Vector2, distance: number, bond: BondDescription, f: Vector2): void
+        {
+            var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
+            f.x += coeff * (target.x - end.x);
+            f.y += coeff * (target.y - end.y);
         }
 
         private addInfluenceFromWalls(particle: Particle, f: Vector2): void

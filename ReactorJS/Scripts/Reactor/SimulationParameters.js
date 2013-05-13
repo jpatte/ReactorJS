@@ -5,21 +5,31 @@ var Reactor;
             this.sceneWidth = 480;
             this.sceneHeight = 320;
             this.heatLevel = 500;
-            var redParticleType = new Reactor.ParticleType('red');
-            redParticleType.color = '#F00';
-            redParticleType.size = 5;
-            redParticleType.mass = 1;
-            redParticleType.viscosity = 2;
-            var blueParticleType = new Reactor.ParticleType('blue');
-            blueParticleType.color = '#00F';
-            blueParticleType.size = 5;
-            blueParticleType.mass = 1;
-            blueParticleType.viscosity = 2;
-            this.particleTypes = {
+            var redParticleType = {
+                name: 'red',
+                color: '#F00',
+                size: 5,
+                mass: 1,
+                viscosity: 2,
+                bondEndPointNames: [
+                    'r'
+                ]
             };
-            this.particleTypes['red'] = redParticleType;
-            this.particleTypes['blue'] = blueParticleType;
-            this.particleGenerationScenario = new ParticleGenerationScenario();
+            var blueParticleType = {
+                name: 'blue',
+                color: '#00F',
+                size: 5,
+                mass: 1,
+                viscosity: 2,
+                bondEndPointNames: [
+                    'b'
+                ]
+            };
+            this.particleTypes = {
+                'red': redParticleType,
+                'blue': blueParticleType
+            };
+            this.particleGenerationScenario = new Reactor.ParticleGenerationScenario();
             this.particleGenerationScenario.initialNbrParticles = {
                 'red': 150,
                 'blue': 150
@@ -28,8 +38,24 @@ var Reactor;
                 range: 5,
                 amplitude: 2000
             };
+            var defaultBond = {
+                color: '#000',
+                amplitude: 50,
+                neutralRange: 20,
+                maxRange: 30
+            };
+            this.possibleBondsBetweenEndPoints = {
+                'r': {
+                    'r': null,
+                    'b': defaultBond
+                },
+                'b': {
+                    'r': defaultBond,
+                    'b': null
+                }
+            };
             var defaultAttractiveForce = {
-                range: 5,
+                range: 25,
                 amplitude: 0
             };
             this.attractiveForcesBetweenParticles = {
@@ -42,28 +68,23 @@ var Reactor;
                     'blue': defaultAttractiveForce
                 }
             };
-            var defaulRepulsiveForce = {
-                range: 20,
+            var defaultRepulsiveForce = {
+                range: 15,
                 amplitude: 50
             };
             this.repulsiveForcesBetweenParticles = {
                 'red': {
-                    'red': defaulRepulsiveForce,
-                    'blue': defaulRepulsiveForce
+                    'red': defaultRepulsiveForce,
+                    'blue': defaultRepulsiveForce
                 },
                 'blue': {
-                    'red': defaulRepulsiveForce,
-                    'blue': defaulRepulsiveForce
+                    'red': defaultRepulsiveForce,
+                    'blue': defaultRepulsiveForce
                 }
             };
         }
         return SimulationParameters;
     })();
     Reactor.SimulationParameters = SimulationParameters;    
-    var ParticleGenerationScenario = (function () {
-        function ParticleGenerationScenario() { }
-        return ParticleGenerationScenario;
-    })();
-    Reactor.ParticleGenerationScenario = ParticleGenerationScenario;    
 })(Reactor || (Reactor = {}));
 //@ sourceMappingURL=SimulationParameters.js.map

@@ -8,6 +8,9 @@ var Reactor;
             this.y = y;
             this.vx = 0;
             this.vy = 0;
+            this.bondEndPoints = _.map(type.bondEndPointNames, function (name) {
+                return new Reactor.BondEndPoint(name);
+            });
         }
         Particle.idCounter = 0;
         return Particle;
