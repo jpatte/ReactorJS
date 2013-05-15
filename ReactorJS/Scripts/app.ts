@@ -10,12 +10,20 @@ class App
     parameters: Reactor.SimulationParameters;
     engine: Reactor.Engine;
 
-    start(canvas: JQuery): void
+    private startTimeMs: number;
+    private totalElapsedTimeMs: number;
+
+    init(canvas: JQuery): void
     {
         this.parameters = new Reactor.SimulationParameters();
 
         this.scene = canvas.get(0).getContext("2d");
+    }
 
+    start(): void 
+    {
+        this.startTimeMs = Date.now();
+        this.totalElapsedTimeMs = 0;
         this.engine = new Reactor.Engine(this.parameters);
 
         setInterval(() => {
@@ -24,12 +32,17 @@ class App
         }, 1000/App.Framerate);
     }
 
-    update(): void 
+    private update(): void 
     {
-        this.engine.update(1/App.Framerate);
+        var nowMs = Date.now();
+        var newTotalElapsedTimeMs = nowMs - this.startTimeMs;
+        var elapsedTimeMs = newTotalElapsedTimeMs - this.totalElapsedTimeMs;
+        this.totalElapsedTimeMs = newTotalElapsedTimeMs
+        
+        this.engine.update(elapsedTimeMs, newTotalElapsedTimeMs);
     }
 
-    draw(): void 
+    private draw(): void 
     {
         this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
   

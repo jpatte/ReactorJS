@@ -1,11 +1,11 @@
 var Reactor;
 (function (Reactor) {
     var Particle = (function () {
-        function Particle(type, x, y) {
+        function Particle(type, position) {
             this.id = Particle.idCounter++;
             this.type = type;
-            this.x = x;
-            this.y = y;
+            this.x = position.x;
+            this.y = position.y;
             this.vx = 0;
             this.vy = 0;
             this.bondEndPoints = _.map(type.bondEndPointNames, function (name) {

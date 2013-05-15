@@ -35,13 +35,13 @@ module Reactor
             this.splitSceneIntoAreas();
         }
 
-        update(dt: number): void
+        update(elapsedTimeMs: number, totalElapsedTimeMs: number): void
         {
-            this.generator.update();
+            this.generator.update(elapsedTimeMs, totalElapsedTimeMs);
 
             this.particles.each((p: Particle) => 
             {
-                this.updateParticlePosition(p, dt);
+                this.updateParticlePosition(p, elapsedTimeMs);
                 this.onParticleMoved(p);
             });
         }
@@ -163,10 +163,13 @@ module Reactor
             return this.nbrAreaColumns * row + column;
         }
 
-        private updateParticlePosition(particle: Particle, dt: number): void
+        private updateParticlePosition(particle: Particle, elapsedTimeMs: number): void
         {
             // calculate forces applied to this particle
             var f = this.computeInfluenceOnParticle(particle);
+
+            // get elapsed time interval, in seconds
+            var dt = elapsedTimeMs / 1000;
 
             // integrate applied forces to update the particle's speed 
             particle.vx += f.x / particle.type.mass * dt;
@@ -209,32 +212,52 @@ module Reactor
 
         private addInfluenceFromOtherParticles(p1: Particle, f: Vector2): void
         {
+            var boundParticles: Particle[] = p1.bondEndPoints
+                .filter((ep: BondEndPoint) => ep.isBound())
+                .map((ep: BondEndPoint) => ep.boundParticle);
+
             _.each(p1.currentArea.surroundingAreas, (area: Area) =>
             {
                 area.particles.each((p2: Particle) => 
                 {
                     if(p1.id != p2.id)
-                        this.addInfluenceFromParticle(p1, p2, f);
+                    {
+                        // are these particles bound together ?
+                        var p2Index = boundParticles.indexOf(p2);
+                        var bondExists = (p2Index >= 0);
+                        if(bondExists)
+                            boundParticles.splice(p2Index, 1);
+
+                        this.addInfluenceFromParticle(p1, p2, bondExists, f);
+                    }
                 });
+            });
+
+            // handle all unhandled bound particles 
+            _.each(boundParticles, (p2: Particle) => 
+            {
+                this.addInfluenceFromParticle(p1, p2, true, f);
             });
         }
 
-        private addInfluenceFromParticle(p1: Particle, p2: Particle, f: Vector2): void
+        private addInfluenceFromParticle(p1: Particle, p2: Particle, bondExists: bool, f: Vector2): void
         {
-            // are these particles linked together ?
+            // are these particles bound together ?
             var activeBond: BondDescription = null;
-            var boundEndPoint: BondEndPoint = _.find(p1.bondEndPoints, (endPoint: BondEndPoint) => endPoint.boundParticle == p2);
-
-            if(boundEndPoint)
+            var boundEndPoint: BondEndPoint = null;             
+            if(bondExists)
+            {
+                boundEndPoint = _.find(p1.bondEndPoints, (endPoint: BondEndPoint) => endPoint.boundParticle == p2);
                 activeBond = boundEndPoint.bond;
+            }
 
             var dx = p1.x - p2.x;
             var dy = p1.y - p2.y;
             var distance = Math.sqrt(dx * dx + dy * dy);
 
-            if(activeBond)
+            if(bondExists)
             {
-                // these particles are linked.
+                // these particles are bound together.
                 // are they close enough to maintain the bond ?
                 if(distance > activeBond.maxRange)
                 {
@@ -247,20 +270,21 @@ module Reactor
                     boundEndPoint.boundParticle = null;
                     boundEndPoint.boundEndPoint = null;
                     activeBond = null;
+                    bondExists = false;
                 }
             }
             else
             {
-                // these particles are not linked.
+                // these particles are not bound together.
                 // do they both have a free matching endpoint ?
                 _.each(p1.bondEndPoints, (endPoint: BondEndPoint) =>
                 {
-                    if(activeBond || endPoint.isBound())
+                    if(bondExists || endPoint.isBound())
                         return;
 
                     _.each(p2.bondEndPoints, (otherEndPoint: BondEndPoint) =>
                     {
-                        if(activeBond || otherEndPoint.isBound())
+                        if(bondExists || otherEndPoint.isBound())
                             return;
 
                         var possibleBond: BondDescription =
@@ -270,19 +294,20 @@ module Reactor
                         {
                             // the particles have matching endpoints and are close enough to be bound.
                             // so let's bind them
-                            activeBond = possibleBond;
-                            endPoint.bond = activeBond;
+                            endPoint.bond = possibleBond;
                             endPoint.boundParticle = p2;
                             endPoint.boundEndPoint = otherEndPoint;
-                            otherEndPoint.bond = activeBond;
+                            otherEndPoint.bond = possibleBond;
                             otherEndPoint.boundParticle = p1;
                             otherEndPoint.boundEndPoint = endPoint;
+                            activeBond = possibleBond;
+                            bondExists = true;
                         }
                     });
                 });
             }
 
-            if(activeBond)
+            if(bondExists)
             {
                 // apply effect of the active bond
                 this.addInfluenceFromBond(p1, p2, distance, activeBond, f);

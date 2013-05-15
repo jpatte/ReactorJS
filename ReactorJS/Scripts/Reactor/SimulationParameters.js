@@ -2,8 +2,8 @@ var Reactor;
 (function (Reactor) {
     var SimulationParameters = (function () {
         function SimulationParameters() {
-            this.sceneWidth = 480;
-            this.sceneHeight = 320;
+            this.sceneWidth = 500;
+            this.sceneHeight = 300;
             this.heatLevel = 500;
             var redParticleType = {
                 name: 'red',
@@ -29,11 +29,7 @@ var Reactor;
                 'red': redParticleType,
                 'blue': blueParticleType
             };
-            this.particleGenerationScenario = new Reactor.ParticleGenerationScenario();
-            this.particleGenerationScenario.initialNbrParticles = {
-                'red': 150,
-                'blue': 150
-            };
+            this.particleGenerationScenario = "start\n" + "  drop 150 'blue' anywhere immediately\n" + "after 5 seconds\n" + "  drop 100 'red' at the center in 10 seconds\n" + "end";
             this.wallsForce = {
                 range: 5,
                 amplitude: 2000

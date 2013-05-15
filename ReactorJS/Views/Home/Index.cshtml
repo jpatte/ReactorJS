@@ -9,7 +9,7 @@
 {
 }
 
-<canvas id="scene" width='480' height='320'>
+<canvas id="scene" width='500' height='300'>
 </canvas>
 
 @section scripts
@@ -21,7 +21,9 @@
 
   <script type="text/javascript">
     $(document).ready(function () {
-      new App().start($('#scene'));
+      var app = new App();
+      app.init($('#scene'));
+      app.start();
     });
   </script>
 }

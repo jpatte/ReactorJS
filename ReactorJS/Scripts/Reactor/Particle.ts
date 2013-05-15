@@ -19,12 +19,12 @@ module Reactor
 
         static idCounter = 0;
         
-        constructor(type: ParticleType, x: number, y: number)
+        constructor(type: ParticleType, position: Vector2)
         {
             this.id = Particle.idCounter++;
             this.type = type;
-            this.x = x;
-            this.y = y;
+            this.x = position.x;
+            this.y = position.y;
             this.vx = 0;
             this.vy = 0;
 

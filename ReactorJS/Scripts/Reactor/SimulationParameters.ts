@@ -13,7 +13,7 @@ module Reactor
         heatLevel: number;
         particleTypes: { [name: string]: ParticleType; };
         possibleBondsBetweenEndPoints: { [ep1: string]: { [ep2: string]: BondDescription; }; };
-        particleGenerationScenario: ParticleGenerationScenario;
+        particleGenerationScenario: string;
         attractiveForcesBetweenParticles: { [pt1: string]: { [pt2: string]: LinearForceDescription; }; };
         repulsiveForcesBetweenParticles: { [pt1: string]: { [pt2: string]: LinearForceDescription; }; };
         wallsForce: LinearForceDescription;
@@ -21,8 +21,8 @@ module Reactor
         constructor()
         {
             // scene dimensions
-            this.sceneWidth = 480;
-            this.sceneHeight = 320;
+            this.sceneWidth = 500;
+            this.sceneHeight = 300;
 
             // global values
             this.heatLevel = 500;
@@ -55,12 +55,20 @@ module Reactor
             };
 
             // particles generation
-            this.particleGenerationScenario = new ParticleGenerationScenario();
-            this.particleGenerationScenario.initialNbrParticles = 
-            {
-                'red': 150,
-                'blue': 150,
-            };
+            this.particleGenerationScenario =
+                //"start\n" +
+                //"  drop 150 blue immediately\n" +
+                //"  drop 150 red immediately\n" +
+                //"end";
+
+                "start\n" +
+                "  drop 150 'blue' anywhere immediately\n" +
+                //"  drop 100 'red' anywhere immediately\n" +
+                "after 5 seconds\n" +
+                "  drop 100 'red' at the center in 10 seconds\n" +
+                //"after 10 seconds\n" +
+                //"  drop 50 'red' at the edges in 10 seconds\n" +
+                "end";
 
             // walls
             this.wallsForce = { range: 5, amplitude: 2000 };

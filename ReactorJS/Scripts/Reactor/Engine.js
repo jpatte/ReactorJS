@@ -12,11 +12,11 @@ var Reactor;
             };
             this.splitSceneIntoAreas();
         }
-        Engine.prototype.update = function (dt) {
+        Engine.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             var _this = this;
-            this.generator.update();
+            this.generator.update(elapsedTimeMs, totalElapsedTimeMs);
             this.particles.each(function (p) {
-                _this.updateParticlePosition(p, dt);
+                _this.updateParticlePosition(p, elapsedTimeMs);
                 _this.onParticleMoved(p);
             });
         };
@@ -118,8 +118,9 @@ var Reactor;
             var column = Math.floor(p.x / this.areasSize + 0.5);
             return this.nbrAreaColumns * row + column;
         };
-        Engine.prototype.updateParticlePosition = function (particle, dt) {
+        Engine.prototype.updateParticlePosition = function (particle, elapsedTimeMs) {
             var f = this.computeInfluenceOnParticle(particle);
+            var dt = elapsedTimeMs / 1000;
             particle.vx += f.x / particle.type.mass * dt;
             particle.vy += f.y / particle.type.mass * dt;
             particle.x += particle.vx * dt;
@@ -150,27 +151,41 @@ var Reactor;
         };
         Engine.prototype.addInfluenceFromOtherParticles = function (p1, f) {
             var _this = this;
+            var boundParticles = p1.bondEndPoints.filter(function (ep) {
+                return ep.isBound();
+            }).map(function (ep) {
+                return ep.boundParticle;
+            });
             _.each(p1.currentArea.surroundingAreas, function (area) {
                 area.particles.each(function (p2) {
                     if(p1.id != p2.id) {
-                        _this.addInfluenceFromParticle(p1, p2, f);
+                        var p2Index = boundParticles.indexOf(p2);
+                        var bondExists = (p2Index >= 0);
+                        if(bondExists) {
+                            boundParticles.splice(p2Index, 1);
+                        }
+                        _this.addInfluenceFromParticle(p1, p2, bondExists, f);
                     }
                 });
             });
+            _.each(boundParticles, function (p2) {
+                _this.addInfluenceFromParticle(p1, p2, true, f);
+            });
         };
-        Engine.prototype.addInfluenceFromParticle = function (p1, p2, f) {
+        Engine.prototype.addInfluenceFromParticle = function (p1, p2, bondExists, f) {
             var _this = this;
             var activeBond = null;
-            var boundEndPoint = _.find(p1.bondEndPoints, function (endPoint) {
-                return endPoint.boundParticle == p2;
-            });
-            if(boundEndPoint) {
+            var boundEndPoint = null;
+            if(bondExists) {
+                boundEndPoint = _.find(p1.bondEndPoints, function (endPoint) {
+                    return endPoint.boundParticle == p2;
+                });
                 activeBond = boundEndPoint.bond;
             }
             var dx = p1.x - p2.x;
             var dy = p1.y - p2.y;
             var distance = Math.sqrt(dx * dx + dy * dy);
-            if(activeBond) {
+            if(bondExists) {
                 if(distance > activeBond.maxRange) {
                     var otherEndPoint = boundEndPoint.boundEndPoint;
                     otherEndPoint.bond = null;
@@ -180,30 +195,32 @@ var Reactor;
                     boundEndPoint.boundParticle = null;
                     boundEndPoint.boundEndPoint = null;
                     activeBond = null;
+                    bondExists = false;
                 }
             } else {
                 _.each(p1.bondEndPoints, function (endPoint) {
-                    if(activeBond || endPoint.isBound()) {
+                    if(bondExists || endPoint.isBound()) {
                         return;
                     }
                     _.each(p2.bondEndPoints, function (otherEndPoint) {
-                        if(activeBond || otherEndPoint.isBound()) {
+                        if(bondExists || otherEndPoint.isBound()) {
                             return;
                         }
                         var possibleBond = _this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];
                         if(possibleBond && distance <= possibleBond.maxRange) {
-                            activeBond = possibleBond;
-                            endPoint.bond = activeBond;
+                            endPoint.bond = possibleBond;
                             endPoint.boundParticle = p2;
                             endPoint.boundEndPoint = otherEndPoint;
-                            otherEndPoint.bond = activeBond;
+                            otherEndPoint.bond = possibleBond;
                             otherEndPoint.boundParticle = p1;
                             otherEndPoint.boundEndPoint = endPoint;
+                            activeBond = possibleBond;
+                            bondExists = true;
                         }
                     });
                 });
             }
-            if(activeBond) {
+            if(bondExists) {
                 this.addInfluenceFromBond(p1, p2, distance, activeBond, f);
             } else {
                 var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
