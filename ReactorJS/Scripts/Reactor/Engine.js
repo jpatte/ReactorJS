@@ -48,6 +48,7 @@ var Reactor;
                     }
                 }
             }
+            this.maxBondRange = maxRange;
             for(var pt1 in this.parameters.particleTypes) {
                 for(var pt2 in this.parameters.particleTypes) {
                     var attractiveForce = this.parameters.attractiveForcesBetweenParticles[pt1][pt2];
@@ -203,7 +204,7 @@ var Reactor;
                         return;
                     }
                     _.each(p2.bondEndPoints, function (otherEndPoint) {
-                        if(bondExists || otherEndPoint.isBound()) {
+                        if(bondExists || otherEndPoint.isBound() || distance > _this.maxBondRange) {
                             return;
                         }
                         var possibleBond = _this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];

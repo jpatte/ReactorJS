@@ -2,80 +2,174 @@ var Reactor;
 (function (Reactor) {
     var SimulationParameters = (function () {
         function SimulationParameters() {
-            this.sceneWidth = 500;
-            this.sceneHeight = 300;
-            this.heatLevel = 500;
-            var redParticleType = {
-                name: 'red',
-                color: '#F00',
-                size: 5,
-                mass: 1,
-                viscosity: 2,
-                bondEndPointNames: [
-                    'r'
-                ]
-            };
-            var blueParticleType = {
-                name: 'blue',
-                color: '#00F',
-                size: 5,
-                mass: 1,
-                viscosity: 2,
-                bondEndPointNames: [
-                    'b'
-                ]
-            };
+            this.sceneWidth = 650;
+            this.sceneHeight = 650;
+            this.heatLevel = 100;
+            var k = 0.5;
+            var defaultSize = 5;
+            var defaultMass = 1;
+            var defaultViscosity = 2;
             this.particleTypes = {
-                'red': redParticleType,
-                'blue': blueParticleType
+                'water': {
+                    name: 'water',
+                    color: '#0000ff',
+                    size: defaultSize,
+                    mass: defaultMass,
+                    viscosity: defaultViscosity,
+                    bondEndPointNames: []
+                },
+                'cyto': {
+                    name: 'cyto',
+                    color: '#eac313',
+                    size: defaultSize,
+                    mass: defaultMass,
+                    viscosity: defaultViscosity,
+                    bondEndPointNames: []
+                },
+                'phobic': {
+                    name: 'phobic',
+                    color: '#ff0000',
+                    size: defaultSize,
+                    mass: defaultMass,
+                    viscosity: defaultViscosity,
+                    bondEndPointNames: [
+                        'a'
+                    ]
+                },
+                'philic': {
+                    name: 'philic',
+                    color: '#bbb',
+                    size: defaultSize,
+                    mass: defaultMass,
+                    viscosity: defaultViscosity,
+                    bondEndPointNames: [
+                        'b'
+                    ]
+                }
             };
-            this.particleGenerationScenario = "start\n" + "  drop 150 'blue' anywhere immediately\n" + "after 5 seconds\n" + "  drop 100 'red' at the center in 10 seconds\n" + "end";
+            this.particleGenerationScenario = "start\n" + "  drop 800 'water' anywhere immediately\n" + "  drop 200 'philic' anywhere immediately\n" + "after 5 seconds\n" + "  drop 200 'phobic' anywhere in 10 seconds\n" + "end";
             this.wallsForce = {
                 range: 5,
-                amplitude: 2000
+                amplitude: 200
             };
             var defaultBond = {
                 color: '#000',
-                amplitude: 50,
-                neutralRange: 20,
-                maxRange: 30
+                amplitude: k * 100,
+                neutralRange: 16,
+                maxRange: 35
             };
             this.possibleBondsBetweenEndPoints = {
-                'r': {
-                    'r': null,
+                'a': {
+                    'a': null,
                     'b': defaultBond
                 },
                 'b': {
-                    'r': defaultBond,
+                    'a': defaultBond,
                     'b': null
                 }
             };
-            var defaultAttractiveForce = {
+            var nullForce = {
                 range: 25,
                 amplitude: 0
             };
             this.attractiveForcesBetweenParticles = {
-                'red': {
-                    'red': defaultAttractiveForce,
-                    'blue': defaultAttractiveForce
+                'water': {
+                    'water': nullForce,
+                    'cyto': nullForce,
+                    'phobic': nullForce,
+                    'philic': nullForce
                 },
-                'blue': {
-                    'red': defaultAttractiveForce,
-                    'blue': defaultAttractiveForce
+                'cyto': {
+                    'water': nullForce,
+                    'cyto': nullForce,
+                    'phobic': nullForce,
+                    'philic': nullForce
+                },
+                'phobic': {
+                    'water': nullForce,
+                    'cyto': nullForce,
+                    'phobic': nullForce,
+                    'philic': nullForce
+                },
+                'philic': {
+                    'water': nullForce,
+                    'cyto': nullForce,
+                    'phobic': nullForce,
+                    'philic': nullForce
                 }
             };
-            var defaultRepulsiveForce = {
-                range: 15,
-                amplitude: 50
-            };
             this.repulsiveForcesBetweenParticles = {
-                'red': {
-                    'red': defaultRepulsiveForce,
-                    'blue': defaultRepulsiveForce
+                'water': {
+                    'water': {
+                        range: 15,
+                        amplitude: k * 25
+                    },
+                    'cyto': {
+                        range: 40,
+                        amplitude: k * 10
+                    },
+                    'phobic': {
+                        range: 30,
+                        amplitude: k * 15
+                    },
+                    'philic': {
+                        range: 15,
+                        amplitude: k * 20
+                    }
                 },
-                'blue': {
-                    'red': defaultRepulsiveForce,
-                    'blue': defaultRepulsiveForce
+                'cyto': {
+                    'water': {
+                        range: 40,
+                        amplitude: k * 10
+                    },
+                    'cyto': {
+                        range: 18,
+                        amplitude: k * 20
+                    },
+                    'phobic': {
+                        range: 30,
+                        amplitude: k * 15
+                    },
+                    'philic': {
+                        range: 15,
+                        amplitude: k * 20
+                    }
+                },
+                'phobic': {
+                    'water': {
+                        range: 30,
+                        amplitude: k * 15
+                    },
+                    'cyto': {
+                        range: 30,
+                        amplitude: k * 15
+                    },
+                    'phobic': {
+                        range: 12,
+                        amplitude: k * 10
+                    },
+                    'philic': {
+                        range: 25,
+                        amplitude: k * 10
+                    }
+                },
+                'philic': {
+                    'water': {
+                        range: 15,
+                        amplitude: k * 20
+                    },
+                    'cyto': {
+                        range: 15,
+                        amplitude: k * 20
+                    },
+                    'phobic': {
+                        range: 25,
+                        amplitude: k * 10
+                    },
+                    'philic': {
+                        range: 12,
+                        amplitude: k * 10
+                    }
                 }
             };
         }

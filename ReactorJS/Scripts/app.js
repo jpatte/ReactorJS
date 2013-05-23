@@ -17,7 +17,7 @@ var App = (function () {
     };
     App.prototype.update = function () {
         var nowMs = Date.now();
-        var newTotalElapsedTimeMs = nowMs - this.startTimeMs;
+        var newTotalElapsedTimeMs = (nowMs - this.startTimeMs) / 1;
         var elapsedTimeMs = newTotalElapsedTimeMs - this.totalElapsedTimeMs;
         this.totalElapsedTimeMs = newTotalElapsedTimeMs;
         this.engine.update(elapsedTimeMs, newTotalElapsedTimeMs);

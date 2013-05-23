@@ -35,7 +35,7 @@ class App
     private update(): void 
     {
         var nowMs = Date.now();
-        var newTotalElapsedTimeMs = nowMs - this.startTimeMs;
+        var newTotalElapsedTimeMs = (nowMs - this.startTimeMs)/1;
         var elapsedTimeMs = newTotalElapsedTimeMs - this.totalElapsedTimeMs;
         this.totalElapsedTimeMs = newTotalElapsedTimeMs
         

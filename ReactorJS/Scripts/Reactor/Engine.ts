@@ -14,6 +14,7 @@ module Reactor
         areasSize: number;
         nbrAreaRows: number;
         nbrAreaColumns: number;
+        maxBondRange: number;
 
         generator: ParticleGenerator;
         particles: ParticleSet;
@@ -82,6 +83,7 @@ module Reactor
                         maxRange = bond.maxRange;
                 }
             }
+            this.maxBondRange = maxRange;
 
             for(var pt1 in this.parameters.particleTypes)
             {
@@ -284,7 +286,7 @@ module Reactor
 
                     _.each(p2.bondEndPoints, (otherEndPoint: BondEndPoint) =>
                     {
-                        if(bondExists || otherEndPoint.isBound())
+                        if(bondExists || otherEndPoint.isBound() || distance > this.maxBondRange)
                             return;
 
                         var possibleBond: BondDescription =
