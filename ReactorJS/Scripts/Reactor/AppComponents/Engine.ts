@@ -2,6 +2,7 @@
 /// <reference path="../../Utils/MathUtils.ts" />
 /// <reference path="../../Utils/Vector2.ts" />
 /// <reference path="../../App/Base/Component.ts" />
+/// <reference path="../Base/EngineComponent.ts" />
 /// <reference path="../Area.ts" />
 /// <reference path="../Particle.ts" />
 /// <reference path="../SimulationParameters.ts" />
@@ -19,12 +20,15 @@ module Reactor
         particles: ParticleSet;
         areas: Area[];
         limbo: Area;
+        components: EngineComponent[];
 
         constructor(parameters: SimulationParameters)
         {
             this.parameters = parameters;
             this.particles = new ParticleSet();
             this.splitSceneIntoAreas();
+
+            this.components = [];
         }
 
         update(elapsedTimeMs: number, totalElapsedTimeMs: number): void
@@ -163,14 +167,15 @@ module Reactor
         private updateParticlePosition(particle: Particle, elapsedTimeMs: number): void
         {
             // calculate forces applied to this particle
-            var f = this.computeInfluenceOnParticle(particle);
+            particle.fx = particle.fy = 0;
+            this.computeInfluenceOnParticle(particle);
 
             // get elapsed time interval, in seconds
             var dt = elapsedTimeMs / 1000;
 
             // integrate applied forces to update the particle's speed 
-            particle.vx += f.x / particle.type.mass * dt;
-            particle.vy += f.y / particle.type.mass * dt;
+            particle.vx += particle.fx / particle.type.mass * dt;
+            particle.vy += particle.fy / particle.type.mass * dt;
 
             // integrate the particle's speed to update its position 
             particle.x += particle.vx * dt
@@ -195,19 +200,16 @@ module Reactor
             }
         }
 
-        private computeInfluenceOnParticle(particle: Particle): Vector2
+        private computeInfluenceOnParticle(particle: Particle): void
         {
-            var f = { 
-                x: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx, 
-                y: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy
-            };
+            particle.fx = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx;
+            particle.fy = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy;
 
-            this.addInfluenceFromOtherParticles(particle, f);
-            this.addInfluenceFromWalls(particle, f);
-            return f;
+            this.addInfluenceFromOtherParticles(particle);
+            this.addInfluenceFromWalls(particle);
         }
 
-        private addInfluenceFromOtherParticles(p1: Particle, f: Vector2): void
+        private addInfluenceFromOtherParticles(p1: Particle): void
         {
             var boundParticles: Particle[] = p1.bondEndPoints
                 .filter((ep: BondEndPoint) => ep.isBound())
@@ -225,7 +227,7 @@ module Reactor
                         if(bondExists)
                             boundParticles.splice(p2Index, 1);
 
-                        this.addInfluenceFromParticle(p1, p2, bondExists, f);
+                        this.addInfluenceFromParticle(p1, p2, bondExists);
                     }
                 });
             });
@@ -233,11 +235,11 @@ module Reactor
             // handle all unhandled bound particles 
             _.each(boundParticles, (p2: Particle) => 
             {
-                this.addInfluenceFromParticle(p1, p2, true, f);
+                this.addInfluenceFromParticle(p1, p2, true);
             });
         }
 
-        private addInfluenceFromParticle(p1: Particle, p2: Particle, bondExists: bool, f: Vector2): void
+        private addInfluenceFromParticle(p1: Particle, p2: Particle, bondExists: bool): void
         {
             // are these particles bound together ?
             var activeBond: BondDescription = null;
@@ -307,51 +309,51 @@ module Reactor
             if(bondExists)
             {
                 // apply effect of the active bond
-                this.addInfluenceFromBond(p1, p2, distance, activeBond, f);
+                this.addInfluenceFromBond(p1, p2, distance, activeBond);
             }
             else
             {
                 // apply repulsive/attractive forces
                 var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce, f);
+                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce);
 
                 var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, attractiveForce, f);
+                this.addInfluenceFromForce(p1, p2, distance, attractiveForce);
             }
         }
 
-        private addInfluenceFromForce(forceTarget: Vector2, forceOrigin: Vector2, distance: number, force: LinearForceDescription, f: Vector2): void
+        private addInfluenceFromForce(particle: Particle, forceOrigin: Vector2, distance: number, force: LinearForceDescription): void
         {
             var range = force.range;
             if(force.amplitude == 0 || distance > range)
                 return;
 
             var coeff = force.amplitude * (range - distance) / range;
-            f.x += coeff * (forceTarget.x - forceOrigin.x);
-            f.y += coeff * (forceTarget.y - forceOrigin.y);
+            particle.fx += coeff * (particle.x - forceOrigin.x);
+            particle.fy += coeff * (particle.y - forceOrigin.y);
         }
 
-        private addInfluenceFromBond(target: Vector2, end: Vector2, distance: number, bond: BondDescription, f: Vector2): void
+        private addInfluenceFromBond(particle: Particle, boundParticle: Particle, distance: number, bond: BondDescription): void
         {
             var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
-            f.x += coeff * (target.x - end.x);
-            f.y += coeff * (target.y - end.y);
+            particle.fx += coeff * (particle.x - boundParticle.x);
+            particle.fy += coeff * (particle.y - boundParticle.y);
         }
 
-        private addInfluenceFromWalls(particle: Particle, f: Vector2): void
+        private addInfluenceFromWalls(particle: Particle): void
         {
             var range = this.parameters.wallsForce.range;
             var amplitude = this.parameters.wallsForce.amplitude;
 
             if(particle.x <= range)
-                f.x = amplitude * (range - particle.x) / range;
+                particle.fx += amplitude * (range - particle.x) / range;
             else if(particle.x >= this.parameters.sceneWidth - range)
-                f.x = amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
+                particle.fx += amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
 
             if(particle.y <= range)
-                f.y = amplitude * (range - particle.y) / range;
+                particle.fy += amplitude * (range - particle.y) / range;
             else if(particle.y >= this.parameters.sceneHeight - range)
-                f.y = amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
+                particle.fy += amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
         }
     }
 }

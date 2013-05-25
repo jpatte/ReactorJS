@@ -15,6 +15,8 @@ module Reactor
         y: number;
         vx: number;
         vy: number;
+        fx: number;
+        fy: number;
         currentArea: Area;
         bondEndPoints: BondEndPoint[];
 

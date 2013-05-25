@@ -5,6 +5,7 @@ var Reactor;
             this.parameters = parameters;
             this.particles = new Reactor.ParticleSet();
             this.splitSceneIntoAreas();
+            this.components = [];
         }
         Engine.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             var _this = this;
@@ -117,10 +118,11 @@ var Reactor;
             return this.nbrAreaColumns * row + column;
         };
         Engine.prototype.updateParticlePosition = function (particle, elapsedTimeMs) {
-            var f = this.computeInfluenceOnParticle(particle);
+            particle.fx = particle.fy = 0;
+            this.computeInfluenceOnParticle(particle);
             var dt = elapsedTimeMs / 1000;
-            particle.vx += f.x / particle.type.mass * dt;
-            particle.vy += f.y / particle.type.mass * dt;
+            particle.vx += particle.fx / particle.type.mass * dt;
+            particle.vy += particle.fy / particle.type.mass * dt;
             particle.x += particle.vx * dt;
             particle.y += particle.vy * dt;
         };
@@ -139,15 +141,12 @@ var Reactor;
             }
         };
         Engine.prototype.computeInfluenceOnParticle = function (particle) {
-            var f = {
-                x: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx,
-                y: this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy
-            };
-            this.addInfluenceFromOtherParticles(particle, f);
-            this.addInfluenceFromWalls(particle, f);
-            return f;
+            particle.fx = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx;
+            particle.fy = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy;
+            this.addInfluenceFromOtherParticles(particle);
+            this.addInfluenceFromWalls(particle);
         };
-        Engine.prototype.addInfluenceFromOtherParticles = function (p1, f) {
+        Engine.prototype.addInfluenceFromOtherParticles = function (p1) {
             var _this = this;
             var boundParticles = p1.bondEndPoints.filter(function (ep) {
                 return ep.isBound();
@@ -162,15 +161,15 @@ var Reactor;
                         if(bondExists) {
                             boundParticles.splice(p2Index, 1);
                         }
-                        _this.addInfluenceFromParticle(p1, p2, bondExists, f);
+                        _this.addInfluenceFromParticle(p1, p2, bondExists);
                     }
                 });
             });
             _.each(boundParticles, function (p2) {
-                _this.addInfluenceFromParticle(p1, p2, true, f);
+                _this.addInfluenceFromParticle(p1, p2, true);
             });
         };
-        Engine.prototype.addInfluenceFromParticle = function (p1, p2, bondExists, f) {
+        Engine.prototype.addInfluenceFromParticle = function (p1, p2, bondExists) {
             var _this = this;
             var activeBond = null;
             var boundEndPoint = null;
@@ -219,40 +218,40 @@ var Reactor;
                 });
             }
             if(bondExists) {
-                this.addInfluenceFromBond(p1, p2, distance, activeBond, f);
+                this.addInfluenceFromBond(p1, p2, distance, activeBond);
             } else {
                 var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce, f);
+                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce);
                 var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, attractiveForce, f);
+                this.addInfluenceFromForce(p1, p2, distance, attractiveForce);
             }
         };
-        Engine.prototype.addInfluenceFromForce = function (forceTarget, forceOrigin, distance, force, f) {
+        Engine.prototype.addInfluenceFromForce = function (particle, forceOrigin, distance, force) {
             var range = force.range;
             if(force.amplitude == 0 || distance > range) {
                 return;
             }
             var coeff = force.amplitude * (range - distance) / range;
-            f.x += coeff * (forceTarget.x - forceOrigin.x);
-            f.y += coeff * (forceTarget.y - forceOrigin.y);
+            particle.fx += coeff * (particle.x - forceOrigin.x);
+            particle.fy += coeff * (particle.y - forceOrigin.y);
         };
-        Engine.prototype.addInfluenceFromBond = function (target, end, distance, bond, f) {
+        Engine.prototype.addInfluenceFromBond = function (particle, boundParticle, distance, bond) {
             var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
-            f.x += coeff * (target.x - end.x);
-            f.y += coeff * (target.y - end.y);
+            particle.fx += coeff * (particle.x - boundParticle.x);
+            particle.fy += coeff * (particle.y - boundParticle.y);
         };
-        Engine.prototype.addInfluenceFromWalls = function (particle, f) {
+        Engine.prototype.addInfluenceFromWalls = function (particle) {
             var range = this.parameters.wallsForce.range;
             var amplitude = this.parameters.wallsForce.amplitude;
             if(particle.x <= range) {
-                f.x = amplitude * (range - particle.x) / range;
+                particle.fx += amplitude * (range - particle.x) / range;
             } else if(particle.x >= this.parameters.sceneWidth - range) {
-                f.x = amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
+                particle.fx += amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
             }
             if(particle.y <= range) {
-                f.y = amplitude * (range - particle.y) / range;
+                particle.fy += amplitude * (range - particle.y) / range;
             } else if(particle.y >= this.parameters.sceneHeight - range) {
-                f.y = amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
+                particle.fy += amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
             }
         };
         return Engine;
