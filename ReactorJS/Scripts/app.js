@@ -9,7 +9,17 @@ var App = (function () {
         var _this = this;
         this.startTimeMs = Date.now();
         this.totalElapsedTimeMs = 0;
-        this.engine = new Reactor.Engine(this.parameters);
+        var engine = new Reactor.Engine(this.parameters);
+        var generator = new Reactor.ParticleGenerator(this.parameters);
+        generator.newParticle = function (p) {
+            return engine.addParticle(p);
+        };
+        this.components = [
+            engine, 
+            generator, 
+            new FramerateCounter(), 
+            
+        ];
         setInterval(function () {
             _this.update();
             _this.draw();
@@ -20,11 +30,16 @@ var App = (function () {
         var newTotalElapsedTimeMs = (nowMs - this.startTimeMs) / 1;
         var elapsedTimeMs = newTotalElapsedTimeMs - this.totalElapsedTimeMs;
         this.totalElapsedTimeMs = newTotalElapsedTimeMs;
-        this.engine.update(elapsedTimeMs, newTotalElapsedTimeMs);
+        _.each(this.components, function (c) {
+            return c.update(elapsedTimeMs, newTotalElapsedTimeMs);
+        });
     };
     App.prototype.draw = function () {
+        var _this = this;
         this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
-        this.engine.render(this.scene);
+        _.each(this.components, function (c) {
+            return c.render(_this.scene);
+        });
     };
     return App;
 })();

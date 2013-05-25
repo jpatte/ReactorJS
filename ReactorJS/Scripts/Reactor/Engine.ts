@@ -1,5 +1,6 @@
 /// <reference path="../Library/all.d.ts" />
 /// <reference path="../Utils/MathUtils.ts" />
+/// <reference path="../Base/AppComponent.ts" />
 /// <reference path="Area.ts" />
 /// <reference path="Particle.ts" />
 /// <reference path="SimulationParameters.ts" />
@@ -8,7 +9,7 @@
 
 module Reactor
 {
-    export class Engine
+    export class Engine implements AppComponent
     {
         parameters: SimulationParameters;
         areasSize: number;
@@ -16,7 +17,6 @@ module Reactor
         nbrAreaColumns: number;
         maxBondRange: number;
 
-        generator: ParticleGenerator;
         particles: ParticleSet;
         areas: Area[];
         limbo: Area;
@@ -24,22 +24,12 @@ module Reactor
         constructor(parameters: SimulationParameters)
         {
             this.parameters = parameters;
-
             this.particles = new ParticleSet();
-            this.generator = new ParticleGenerator(parameters);
-            this.generator.newParticle = (p: Particle) =>
-            {
-                this.particles.push(p);
-                this.onParticleMoved(p);
-            };
-
             this.splitSceneIntoAreas();
         }
 
         update(elapsedTimeMs: number, totalElapsedTimeMs: number): void
         {
-            this.generator.update(elapsedTimeMs, totalElapsedTimeMs);
-
             this.particles.each((p: Particle) => 
             {
                 this.updateParticlePosition(p, elapsedTimeMs);
@@ -68,6 +58,12 @@ module Reactor
             });
             scene.closePath();
             scene.stroke();
+        }
+
+        addParticle(particle: Particle): void
+        {
+            this.particles.push(particle);
+            this.onParticleMoved(particle);
         }
 
         private splitSceneIntoAreas(): void

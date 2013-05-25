@@ -47,7 +47,7 @@ var Reactor;
                     ]
                 }
             };
-            this.particleGenerationScenario = "start\n" + "  drop 800 'water' anywhere immediately\n" + "  drop 200 'philic' anywhere immediately\n" + "after 5 seconds\n" + "  drop 200 'phobic' anywhere in 10 seconds\n" + "end";
+            this.particleGenerationScenario = "start\n" + "  drop 80 'water' anywhere immediately\n" + "  drop 200 'philic' anywhere immediately\n" + "after 5 seconds\n" + "  drop 200 'phobic' anywhere in 10 seconds\n" + "end";
             this.wallsForce = {
                 range: 5,
                 amplitude: 200

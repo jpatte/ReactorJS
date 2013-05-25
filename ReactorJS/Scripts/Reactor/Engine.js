@@ -2,19 +2,12 @@ var Reactor;
 (function (Reactor) {
     var Engine = (function () {
         function Engine(parameters) {
-            var _this = this;
             this.parameters = parameters;
             this.particles = new Reactor.ParticleSet();
-            this.generator = new Reactor.ParticleGenerator(parameters);
-            this.generator.newParticle = function (p) {
-                _this.particles.push(p);
-                _this.onParticleMoved(p);
-            };
             this.splitSceneIntoAreas();
         }
         Engine.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             var _this = this;
-            this.generator.update(elapsedTimeMs, totalElapsedTimeMs);
             this.particles.each(function (p) {
                 _this.updateParticlePosition(p, elapsedTimeMs);
                 _this.onParticleMoved(p);
@@ -36,6 +29,10 @@ var Reactor;
             });
             scene.closePath();
             scene.stroke();
+        };
+        Engine.prototype.addParticle = function (particle) {
+            this.particles.push(particle);
+            this.onParticleMoved(particle);
         };
         Engine.prototype.splitSceneIntoAreas = function () {
             var _this = this;

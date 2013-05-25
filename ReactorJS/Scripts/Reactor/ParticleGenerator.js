@@ -24,6 +24,8 @@ var Reactor;
                 }
             }
         };
+        ParticleGenerator.prototype.render = function (scene) {
+        };
         ParticleGenerator.prototype.parseScenario = function (scenario) {
             var _this = this;
             var lines = scenario.split("\n");

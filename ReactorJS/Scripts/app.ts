@@ -1,5 +1,8 @@
 /// <reference path="Library/all.d.ts" />
+/// <reference path="Base/AppComponent.ts" />
+/// <reference path="Components/FramerateCounter.ts" />
 /// <reference path="Reactor/Engine.ts" />
+/// <reference path="Reactor/ParticleGenerator.ts" />
 
 class App
 {
@@ -8,7 +11,7 @@ class App
     scene: CanvasRenderingContext2D;
 
     parameters: Reactor.SimulationParameters;
-    engine: Reactor.Engine;
+    components: Reactor.AppComponent[];
 
     private startTimeMs: number;
     private totalElapsedTimeMs: number;
@@ -24,8 +27,17 @@ class App
     {
         this.startTimeMs = Date.now();
         this.totalElapsedTimeMs = 0;
-        this.engine = new Reactor.Engine(this.parameters);
 
+        var engine = new Reactor.Engine(this.parameters);
+        var generator = new Reactor.ParticleGenerator(this.parameters);
+        generator.newParticle = (p: Reactor.Particle) => engine.addParticle(p);
+
+        this.components = [
+            engine,
+            generator,
+            new FramerateCounter(),
+        ];
+        
         setInterval(() => {
           this.update();
           this.draw();
@@ -39,14 +51,13 @@ class App
         var elapsedTimeMs = newTotalElapsedTimeMs - this.totalElapsedTimeMs;
         this.totalElapsedTimeMs = newTotalElapsedTimeMs
         
-        this.engine.update(elapsedTimeMs, newTotalElapsedTimeMs);
+        _.each(this.components, (c: Reactor.AppComponent) => c.update(elapsedTimeMs, newTotalElapsedTimeMs));
     }
 
     private draw(): void 
     {
         this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
   
-        this.engine.render(this.scene);
+        _.each(this.components, (c: Reactor.AppComponent) => c.render(this.scene));
     }
 }
-

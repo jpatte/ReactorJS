@@ -19,6 +19,8 @@ namespace ReactorJS
 
             bundles.Add(new ScriptBundle("~/src/app").Include(
                 "~/Scripts/Utils/*.js",
+                "~/Scripts/Base/*.js",
+                "~/Scripts/Components/*.js",
                 "~/Scripts/Reactor/*.js",
                 "~/Scripts/app.js"));
 

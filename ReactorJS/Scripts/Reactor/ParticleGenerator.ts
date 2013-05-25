@@ -1,5 +1,6 @@
 /// <reference path="../Library/all.d.ts" />
 /// <reference path="../Utils/MathUtils.ts" />
+/// <reference path="../Base/AppComponent.ts" />
 /// <reference path="SimulationParameters.ts" />
 /// <reference path="ParticleGenerationScenario.ts" />
 /// <reference path="Particle.ts" />
@@ -7,7 +8,7 @@
 
 module Reactor 
 {
-    export class ParticleGenerator
+    export class ParticleGenerator implements AppComponent
     {
         newParticle: (p: Particle) => void;
         
@@ -42,6 +43,11 @@ module Reactor
                 if(this.currentActionSet)
                     this.currentActionSet.start(totalElapsedTimeMs);
             }
+        }
+
+        render(scene: CanvasRenderingContext2D): void
+        {
+            // nothing to render
         }
 
         private parseScenario(scenario: string): void

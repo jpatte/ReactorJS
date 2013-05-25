@@ -157,6 +157,14 @@
     <Content Include="Scripts\app.js">
       <DependentUpon>app.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="Scripts\Base\AppComponent.ts" />
+    <Content Include="Scripts\Base\AppComponent.js">
+      <DependentUpon>AppComponent.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Components\FramerateCounter.ts" />
+    <Content Include="Scripts\Components\FramerateCounter.js">
+      <DependentUpon>FramerateCounter.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\Library\all.d.ts" />
     <Content Include="Scripts\Library\Definitions\jQuery.d.ts" />
     <Content Include="Scripts\Library\Definitions\Knockout.d.ts" />
@@ -275,6 +283,11 @@
   <ItemGroup>
     <Content Include="Scripts\Reactor\ParticleGenerator.js.map">
       <DependentUpon>ParticleGenerator.ts</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\Components\FramerateCounter.js.map">
+      <DependentUpon>FramerateCounter.ts</DependentUpon>
     </Content>
   </ItemGroup>
   <PropertyGroup>
