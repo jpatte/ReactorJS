@@ -1,14 +1,13 @@
-/// <reference path="../Library/all.d.ts" />
-/// <reference path="../Utils/MathUtils.ts" />
-/// <reference path="../Base/AppComponent.ts" />
-/// <reference path="SimulationParameters.ts" />
-/// <reference path="ParticleGenerationScenario.ts" />
-/// <reference path="Particle.ts" />
-/// <reference path="Vector2.ts" />
+/// <reference path="../../Library/all.d.ts" />
+/// <reference path="../../Utils/MathUtils.ts" />
+/// <reference path="../../Utils/Vector2.ts" />
+/// <reference path="../../App/Base/Component.ts" />
+/// <reference path="../SimulationParameters.ts" />
+/// <reference path="../Particle.ts" />
 
 module Reactor 
 {
-    export class ParticleGenerator implements AppComponent
+    export class ParticleGenerator implements App.Component
     {
         newParticle: (p: Particle) => void;
         

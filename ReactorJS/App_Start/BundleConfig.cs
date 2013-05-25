@@ -19,10 +19,13 @@ namespace ReactorJS
 
             bundles.Add(new ScriptBundle("~/src/app").Include(
                 "~/Scripts/Utils/*.js",
-                "~/Scripts/Base/*.js",
-                "~/Scripts/Components/*.js",
+                "~/Scripts/Reactor/Base/*.js",
                 "~/Scripts/Reactor/*.js",
-                "~/Scripts/app.js"));
+                "~/Scripts/Reactor/EngineComponents/*.js",
+                "~/Scripts/Reactor/AppComponents/*.js",
+                "~/Scripts/App/Base/*.js",
+                "~/Scripts/App/Components/*.js",
+                "~/Scripts/App/*.js"));
 
             bundles.Add(new StyleBundle("~/css/site").Include(
                 "~/Content/site.css"));

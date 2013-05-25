@@ -1,4 +1,5 @@
 /// <reference path="../Library/all.d.ts" />
+/// <reference path="../Utils/Vector2.ts" />
 /// <reference path="BondDescription.ts" />
 /// <reference path="BondEndPoint.ts" />
 /// <reference path="ParticleType.ts" />

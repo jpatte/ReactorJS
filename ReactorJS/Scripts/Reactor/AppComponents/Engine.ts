@@ -1,15 +1,14 @@
-/// <reference path="../Library/all.d.ts" />
-/// <reference path="../Utils/MathUtils.ts" />
-/// <reference path="../Base/AppComponent.ts" />
-/// <reference path="Area.ts" />
-/// <reference path="Particle.ts" />
-/// <reference path="SimulationParameters.ts" />
-/// <reference path="Vector2.ts" />
-/// <reference path="ParticleGenerator.ts" />
+/// <reference path="../../Library/all.d.ts" />
+/// <reference path="../../Utils/MathUtils.ts" />
+/// <reference path="../../Utils/Vector2.ts" />
+/// <reference path="../../App/Base/Component.ts" />
+/// <reference path="../Area.ts" />
+/// <reference path="../Particle.ts" />
+/// <reference path="../SimulationParameters.ts" />
 
 module Reactor
 {
-    export class Engine implements AppComponent
+    export class Engine implements App.Component
     {
         parameters: SimulationParameters;
         areasSize: number;

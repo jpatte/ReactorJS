@@ -1,8 +1,7 @@
 /// <reference path="../Library/all.d.ts" />
+/// <reference path="../Utils/LinearForceDescription.ts" />
 /// <reference path="BondDescription.ts" />
 /// <reference path="ParticleType.ts" />
-/// <reference path="LinearForceDescription.ts" />
-/// <reference path="ParticleGenerationScenario.ts" />
 
 module Reactor
 {

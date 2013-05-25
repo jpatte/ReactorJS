@@ -153,16 +153,16 @@
       <DependentUpon>Site.less</DependentUpon>
     </Content>
     <Content Include="Global.asax" />
-    <TypeScriptCompile Include="Scripts\app.ts" />
-    <Content Include="Scripts\app.js">
-      <DependentUpon>app.ts</DependentUpon>
+    <TypeScriptCompile Include="Scripts\App\Application.ts" />
+    <Content Include="Scripts\App\Application.js.map">
+      <DependentUpon>Application.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="Scripts\Base\AppComponent.ts" />
-    <Content Include="Scripts\Base\AppComponent.js">
-      <DependentUpon>AppComponent.ts</DependentUpon>
+    <None Include="Scripts\App\Base\Component.ts" />
+    <TypeScriptCompile Include="Scripts\App\Components\FramerateCounter.ts" />
+    <Content Include="Scripts\App\Application.js">
+      <DependentUpon>Application.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="Scripts\Components\FramerateCounter.ts" />
-    <Content Include="Scripts\Components\FramerateCounter.js">
+    <Content Include="Scripts\App\Components\FramerateCounter.js">
       <DependentUpon>FramerateCounter.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Library\all.d.ts" />
@@ -173,19 +173,19 @@
     <Content Include="Scripts\Library\knockout-2.2.1.js" />
     <Content Include="Scripts\Library\underscore.js" />
     <TypeScriptCompile Include="Scripts\Reactor\Particle.ts" />
-    <TypeScriptCompile Include="Scripts\Reactor\Engine.ts" />
+    <TypeScriptCompile Include="Scripts\Reactor\AppComponents\Engine.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\Area.ts" />
     <Content Include="Scripts\Reactor\Area.js">
       <DependentUpon>Area.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="Scripts\Reactor\BondDescription.ts" />
-    <TypeScriptCompile Include="Scripts\Reactor\LinearForceDescription.ts" />
-    <TypeScriptCompile Include="Scripts\Reactor\ParticleGenerationScenario.ts" />
+    <TypeScriptCompile Include="Scripts\Utils\LinearForceDescription.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\BondEndPoint.ts" />
+    <Content Include="Scripts\Reactor\Base\EngineComponent.ts" />
     <Content Include="Scripts\Reactor\BondEndPoint.js">
       <DependentUpon>BondEndPoint.ts</DependentUpon>
     </Content>
-    <Content Include="Scripts\Reactor\Engine.js">
+    <Content Include="Scripts\Reactor\AppComponents\Engine.js">
       <DependentUpon>Engine.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Reactor\Particle.js">
@@ -193,17 +193,14 @@
     </Content>
     <TypeScriptCompile Include="Scripts\Reactor\ParticleType.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\ParticleSet.ts" />
-    <Content Include="Scripts\Reactor\ParticleGenerationScenario.js">
-      <DependentUpon>ParticleGenerationScenario.ts</DependentUpon>
-    </Content>
-    <TypeScriptCompile Include="Scripts\Reactor\ParticleGenerator.ts" />
-    <Content Include="Scripts\Reactor\ParticleGenerator.js">
+    <TypeScriptCompile Include="Scripts\Reactor\AppComponents\ParticleGenerator.ts" />
+    <Content Include="Scripts\Reactor\AppComponents\ParticleGenerator.js">
       <DependentUpon>ParticleGenerator.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Reactor\ParticleSet.js">
       <DependentUpon>ParticleSet.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="Scripts\Reactor\Vector2.ts" />
+    <TypeScriptCompile Include="Scripts\Utils\Vector2.ts" />
     <TypeScriptCompile Include="Scripts\Utils\MathUtils.ts" />
     <TypeScriptCompile Include="Scripts\Reactor\SimulationParameters.ts" />
     <Content Include="Scripts\Reactor\SimulationParameters.js">
@@ -228,6 +225,7 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
+    <Folder Include="Scripts\Reactor\EngineComponents\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
@@ -236,17 +234,12 @@
     <Content Include="Content\Site.less" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\app.js.map">
-      <DependentUpon>app.ts</DependentUpon>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Scripts\Reactor\Particle.js.map">
       <DependentUpon>Particle.ts</DependentUpon>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\Reactor\Engine.js.map">
+    <Content Include="Scripts\Reactor\AppComponents\Engine.js.map">
       <DependentUpon>Engine.ts</DependentUpon>
     </Content>
   </ItemGroup>
@@ -266,11 +259,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\Reactor\ParticleGenerationScenario.js.map">
-      <DependentUpon>ParticleGenerationScenario.ts</DependentUpon>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Scripts\Reactor\SimulationParameters.js.map">
       <DependentUpon>SimulationParameters.ts</DependentUpon>
     </Content>
@@ -281,12 +269,12 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\Reactor\ParticleGenerator.js.map">
+    <Content Include="Scripts\Reactor\AppComponents\ParticleGenerator.js.map">
       <DependentUpon>ParticleGenerator.ts</DependentUpon>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\Components\FramerateCounter.js.map">
+    <Content Include="Scripts\App\Components\FramerateCounter.js.map">
       <DependentUpon>FramerateCounter.ts</DependentUpon>
     </Content>
   </ItemGroup>
