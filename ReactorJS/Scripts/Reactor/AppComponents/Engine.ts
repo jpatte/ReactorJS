@@ -6,37 +6,54 @@
 /// <reference path="../Area.ts" />
 /// <reference path="../Particle.ts" />
 /// <reference path="../SimulationParameters.ts" />
+/// <reference path="../EngineComponents/NaturalParticlesMovementComponent.ts" />
+/// <reference path="../EngineComponents/WallsEffectComponent.ts" />
+/// <reference path="../EngineComponents/MutualInteractionsComponent.ts" />
+/// <reference path="../EngineComponents/ParticlesBondingComponent.ts" />
+/// <reference path="../EngineComponents/ParticlesInteractionsComponent.ts" />
 
 module Reactor
 {
     export class Engine implements App.Component
     {
         parameters: SimulationParameters;
-        areasSize: number;
-        nbrAreaRows: number;
-        nbrAreaColumns: number;
-        maxBondRange: number;
-
+        private areasSize: number;
+        private nbrAreaRows: number;
+        private nbrAreaColumns: number;
         particles: ParticleSet;
-        areas: Area[];
-        limbo: Area;
+        private areas: Area[];
+        private limbo: Area;
         components: EngineComponent[];
 
         constructor(parameters: SimulationParameters)
         {
             this.parameters = parameters;
             this.particles = new ParticleSet();
-            this.splitSceneIntoAreas();
 
-            this.components = [];
+            this.components = [
+                new NaturalParticlesMovementComponent(parameters),
+                new WallsEffectComponent(parameters),
+                new ParticlesInteractionsComponent(parameters),
+                new ParticlesBondingComponent(parameters),
+            ];
+        }
+
+        init()
+        {
+            this.splitSceneIntoAreas();
         }
 
         update(elapsedTimeMs: number, totalElapsedTimeMs: number): void
         {
             this.particles.each((p: Particle) => 
             {
+                this.computeInfluenceOnParticle(p);
+            });
+
+            this.particles.each((p: Particle) => 
+            {
                 this.updateParticlePosition(p, elapsedTimeMs);
-                this.onParticleMoved(p);
+                this.updateParticleCurrentArea(p);
             });
         }
         
@@ -66,37 +83,23 @@ module Reactor
         addParticle(particle: Particle): void
         {
             this.particles.push(particle);
-            this.onParticleMoved(particle);
+            this.updateParticleCurrentArea(particle);
+        }
+
+        removeParticle(particle: Particle): void
+        {
+            this.particles.remove(particle);
+            if(particle.currentArea)
+            {
+                particle.currentArea.particles.remove(particle);
+                particle.currentArea = null;
+            }
         }
 
         private splitSceneIntoAreas(): void
         {
-            // find max force range between particles
-            var maxRange = 0;
-            for(var ep1 in this.parameters.possibleBondsBetweenEndPoints)
-            {
-                for(var ep2 in this.parameters.possibleBondsBetweenEndPoints[ep1])
-                {
-                    var bond = this.parameters.possibleBondsBetweenEndPoints[ep1][ep2];
-                    if(bond && bond.maxRange > maxRange)
-                        maxRange = bond.maxRange;
-                }
-            }
-            this.maxBondRange = maxRange;
-
-            for(var pt1 in this.parameters.particleTypes)
-            {
-                for(var pt2 in this.parameters.particleTypes)
-                {
-                    var attractiveForce = this.parameters.attractiveForcesBetweenParticles[pt1][pt2];
-                    if(attractiveForce.amplitude != 0 && attractiveForce.range > maxRange)
-                        maxRange = attractiveForce.range;
-
-                    var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[pt1][pt2];
-                    if(repulsiveForce.amplitude != 0 && repulsiveForce.range > maxRange)
-                        maxRange = repulsiveForce.range;
-                }
-            }
+            var maxRange = _.reduce(this.components, (m: number, c: EngineComponent) =>
+                Math.max(m, c.maxInfluenceRange), 0);
 
             // determine areas count & size 
             this.areasSize = Math.ceil(maxRange + 5);
@@ -124,36 +127,22 @@ module Reactor
             var hasTop = (row > 0);
             var hasRight = (column < this.nbrAreaColumns - 1);
             var hasBottom = (row < this.nbrAreaRows - 1);
+
             var neighbors = [];
-            var addNeighbor = (r: number, c: number) => neighbors.push(this.areas[r * this.nbrAreaColumns + c]);
+            var addNeighbor = (r: number, c: number, cond: bool) => {
+                if(cond)
+                    neighbors.push(this.areas[r * this.nbrAreaColumns + c]);
+            };
 
-            // top row
-            if(hasTop)
-            {
-                if(hasLeft)
-                    addNeighbor(row - 1, column - 1);
-                addNeighbor(row - 1, column);
-                if(hasRight)
-                    addNeighbor(row - 1, column + 1);
-            }
-
-            // middle row
-            if(hasLeft)
-                addNeighbor(row, column - 1);
-            addNeighbor(row, column);
-            if(hasRight)
-                addNeighbor(row, column + 1);
-
-            // bottom row
-            if(hasBottom)
-            {
-                if(hasLeft)
-                    addNeighbor(row + 1, column - 1);
-                addNeighbor(row + 1, column);
-                if(hasRight)
-                    addNeighbor(row + 1, column + 1);
-            }
-
+            addNeighbor(row - 1, column - 1, hasTop && hasLeft);
+            addNeighbor(row - 1, column,     hasTop);
+            addNeighbor(row - 1, column + 1, hasTop && hasRight);
+            addNeighbor(row,     column - 1, hasLeft);
+            addNeighbor(row,     column,     true);
+            addNeighbor(row,     column + 1, hasRight);
+            addNeighbor(row + 1, column - 1, hasBottom && hasLeft);
+            addNeighbor(row + 1, column,     hasBottom);
+            addNeighbor(row + 1, column + 1, hasBottom && hasRight);
             return neighbors;
         }
         
@@ -166,10 +155,6 @@ module Reactor
 
         private updateParticlePosition(particle: Particle, elapsedTimeMs: number): void
         {
-            // calculate forces applied to this particle
-            particle.fx = particle.fy = 0;
-            this.computeInfluenceOnParticle(particle);
-
             // get elapsed time interval, in seconds
             var dt = elapsedTimeMs / 1000;
 
@@ -182,14 +167,10 @@ module Reactor
             particle.y += particle.vy * dt
         }
 
-        private onParticleMoved(particle: Particle): void
+        private updateParticleCurrentArea(particle: Particle): void
         {
-            // get previous and new areas based on the particle position
-            // (or limbo if the particle has somehow exited the scene)
             var previousArea = particle.currentArea;
-            var newArea = this.areas[this.computeAreaNumber(particle)];
-            if(!newArea)
-                newArea = this.limbo;
+            var newArea = this.areas[this.computeAreaNumber(particle)] || this.limbo;
 
             if(previousArea != newArea)
             {
@@ -202,158 +183,24 @@ module Reactor
 
         private computeInfluenceOnParticle(particle: Particle): void
         {
-            particle.fx = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx;
-            particle.fy = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy;
-
-            this.addInfluenceFromOtherParticles(particle);
-            this.addInfluenceFromWalls(particle);
+            var particlesNearby = this.getParticlesNearby(particle);
+            particle.fx = particle.fy = 0;
+            _.each(this.components, (c: EngineComponent) => 
+                c.addInfluenceOnParticle(particle, particlesNearby));
         }
 
-        private addInfluenceFromOtherParticles(p1: Particle): void
+        private getParticlesNearby(p1: Particle): Particle[]
         {
-            var boundParticles: Particle[] = p1.bondEndPoints
-                .filter((ep: BondEndPoint) => ep.isBound())
-                .map((ep: BondEndPoint) => ep.boundParticle);
-
+            var particlesNearby = [];
             _.each(p1.currentArea.surroundingAreas, (area: Area) =>
             {
                 area.particles.each((p2: Particle) => 
                 {
                     if(p1.id != p2.id)
-                    {
-                        // are these particles bound together ?
-                        var p2Index = boundParticles.indexOf(p2);
-                        var bondExists = (p2Index >= 0);
-                        if(bondExists)
-                            boundParticles.splice(p2Index, 1);
-
-                        this.addInfluenceFromParticle(p1, p2, bondExists);
-                    }
+                        particlesNearby.push(p2);
                 });
             });
-
-            // handle all unhandled bound particles 
-            _.each(boundParticles, (p2: Particle) => 
-            {
-                this.addInfluenceFromParticle(p1, p2, true);
-            });
-        }
-
-        private addInfluenceFromParticle(p1: Particle, p2: Particle, bondExists: bool): void
-        {
-            // are these particles bound together ?
-            var activeBond: BondDescription = null;
-            var boundEndPoint: BondEndPoint = null;             
-            if(bondExists)
-            {
-                boundEndPoint = _.find(p1.bondEndPoints, (endPoint: BondEndPoint) => endPoint.boundParticle == p2);
-                activeBond = boundEndPoint.bond;
-            }
-
-            var dx = p1.x - p2.x;
-            var dy = p1.y - p2.y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
-
-            if(bondExists)
-            {
-                // these particles are bound together.
-                // are they close enough to maintain the bond ?
-                if(distance > activeBond.maxRange)
-                {
-                    // nope, let's break the bond
-                    var otherEndPoint = boundEndPoint.boundEndPoint;
-                    otherEndPoint.bond = null;
-                    otherEndPoint.boundParticle = null;
-                    otherEndPoint.boundEndPoint = null;
-                    boundEndPoint.bond = null;
-                    boundEndPoint.boundParticle = null;
-                    boundEndPoint.boundEndPoint = null;
-                    activeBond = null;
-                    bondExists = false;
-                }
-            }
-            else
-            {
-                // these particles are not bound together.
-                // do they both have a free matching endpoint ?
-                _.each(p1.bondEndPoints, (endPoint: BondEndPoint) =>
-                {
-                    if(bondExists || endPoint.isBound())
-                        return;
-
-                    _.each(p2.bondEndPoints, (otherEndPoint: BondEndPoint) =>
-                    {
-                        if(bondExists || otherEndPoint.isBound() || distance > this.maxBondRange)
-                            return;
-
-                        var possibleBond: BondDescription =
-                            this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];
-
-                        if(possibleBond && distance <= possibleBond.maxRange)
-                        {
-                            // the particles have matching endpoints and are close enough to be bound.
-                            // so let's bind them
-                            endPoint.bond = possibleBond;
-                            endPoint.boundParticle = p2;
-                            endPoint.boundEndPoint = otherEndPoint;
-                            otherEndPoint.bond = possibleBond;
-                            otherEndPoint.boundParticle = p1;
-                            otherEndPoint.boundEndPoint = endPoint;
-                            activeBond = possibleBond;
-                            bondExists = true;
-                        }
-                    });
-                });
-            }
-
-            if(bondExists)
-            {
-                // apply effect of the active bond
-                this.addInfluenceFromBond(p1, p2, distance, activeBond);
-            }
-            else
-            {
-                // apply repulsive/attractive forces
-                var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce);
-
-                var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, attractiveForce);
-            }
-        }
-
-        private addInfluenceFromForce(particle: Particle, forceOrigin: Vector2, distance: number, force: LinearForceDescription): void
-        {
-            var range = force.range;
-            if(force.amplitude == 0 || distance > range)
-                return;
-
-            var coeff = force.amplitude * (range - distance) / range;
-            particle.fx += coeff * (particle.x - forceOrigin.x);
-            particle.fy += coeff * (particle.y - forceOrigin.y);
-        }
-
-        private addInfluenceFromBond(particle: Particle, boundParticle: Particle, distance: number, bond: BondDescription): void
-        {
-            var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
-            particle.fx += coeff * (particle.x - boundParticle.x);
-            particle.fy += coeff * (particle.y - boundParticle.y);
-        }
-
-        private addInfluenceFromWalls(particle: Particle): void
-        {
-            var range = this.parameters.wallsForce.range;
-            var amplitude = this.parameters.wallsForce.amplitude;
-
-            if(particle.x <= range)
-                particle.fx += amplitude * (range - particle.x) / range;
-            else if(particle.x >= this.parameters.sceneWidth - range)
-                particle.fx += amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
-
-            if(particle.y <= range)
-                particle.fy += amplitude * (range - particle.y) / range;
-            else if(particle.y >= this.parameters.sceneHeight - range)
-                particle.fy += amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
+            return particlesNearby;
         }
     }
 }

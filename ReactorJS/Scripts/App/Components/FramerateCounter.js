@@ -6,6 +6,8 @@ var App;
             this.previousFrameCounter = 0;
             this.currentFrameCounter = 0;
         }
+        FramerateCounter.prototype.init = function () {
+        };
         FramerateCounter.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             var sec = Math.floor(totalElapsedTimeMs / 1000);
             if(sec == this.currentSecond) {

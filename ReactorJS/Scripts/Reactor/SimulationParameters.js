@@ -54,9 +54,9 @@ var Reactor;
             };
             var defaultBond = {
                 color: '#000',
-                amplitude: k * 100,
+                amplitude: -k * 8,
                 neutralRange: 16,
-                maxRange: 35
+                maxRange: 30
             };
             this.possibleBondsBetweenEndPoints = {
                 'a': {

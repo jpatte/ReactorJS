@@ -5,9 +5,11 @@ var Reactor;
             this.newParticle = function (p) {
             };
             this.parameters = parameters;
-            this.parseScenario(parameters.particleGenerationScenario);
-            this.isStarted = false;
         }
+        ParticleGenerator.prototype.init = function () {
+            this.parseScenario(this.parameters.particleGenerationScenario);
+            this.isStarted = false;
+        };
         ParticleGenerator.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             if(!this.isStarted) {
                 this.currentActionSet.start(totalElapsedTimeMs);

@@ -4,14 +4,25 @@ var Reactor;
         function Engine(parameters) {
             this.parameters = parameters;
             this.particles = new Reactor.ParticleSet();
-            this.splitSceneIntoAreas();
-            this.components = [];
+            this.components = [
+                new Reactor.NaturalParticlesMovementComponent(parameters), 
+                new Reactor.WallsEffectComponent(parameters), 
+                new Reactor.ParticlesInteractionsComponent(parameters), 
+                new Reactor.ParticlesBondingComponent(parameters), 
+                
+            ];
         }
+        Engine.prototype.init = function () {
+            this.splitSceneIntoAreas();
+        };
         Engine.prototype.update = function (elapsedTimeMs, totalElapsedTimeMs) {
             var _this = this;
             this.particles.each(function (p) {
+                _this.computeInfluenceOnParticle(p);
+            });
+            this.particles.each(function (p) {
                 _this.updateParticlePosition(p, elapsedTimeMs);
-                _this.onParticleMoved(p);
+                _this.updateParticleCurrentArea(p);
             });
         };
         Engine.prototype.render = function (scene) {
@@ -33,32 +44,20 @@ var Reactor;
         };
         Engine.prototype.addParticle = function (particle) {
             this.particles.push(particle);
-            this.onParticleMoved(particle);
+            this.updateParticleCurrentArea(particle);
+        };
+        Engine.prototype.removeParticle = function (particle) {
+            this.particles.remove(particle);
+            if(particle.currentArea) {
+                particle.currentArea.particles.remove(particle);
+                particle.currentArea = null;
+            }
         };
         Engine.prototype.splitSceneIntoAreas = function () {
             var _this = this;
-            var maxRange = 0;
-            for(var ep1 in this.parameters.possibleBondsBetweenEndPoints) {
-                for(var ep2 in this.parameters.possibleBondsBetweenEndPoints[ep1]) {
-                    var bond = this.parameters.possibleBondsBetweenEndPoints[ep1][ep2];
-                    if(bond && bond.maxRange > maxRange) {
-                        maxRange = bond.maxRange;
-                    }
-                }
-            }
-            this.maxBondRange = maxRange;
-            for(var pt1 in this.parameters.particleTypes) {
-                for(var pt2 in this.parameters.particleTypes) {
-                    var attractiveForce = this.parameters.attractiveForcesBetweenParticles[pt1][pt2];
-                    if(attractiveForce.amplitude != 0 && attractiveForce.range > maxRange) {
-                        maxRange = attractiveForce.range;
-                    }
-                    var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[pt1][pt2];
-                    if(repulsiveForce.amplitude != 0 && repulsiveForce.range > maxRange) {
-                        maxRange = repulsiveForce.range;
-                    }
-                }
-            }
+            var maxRange = _.reduce(this.components, function (m, c) {
+                return Math.max(m, c.maxInfluenceRange);
+            }, 0);
             this.areasSize = Math.ceil(maxRange + 5);
             this.nbrAreaRows = Math.ceil(this.parameters.sceneHeight / this.areasSize) + 1;
             this.nbrAreaColumns = Math.ceil(this.parameters.sceneWidth / this.areasSize) + 1;
@@ -82,34 +81,20 @@ var Reactor;
             var hasRight = (column < this.nbrAreaColumns - 1);
             var hasBottom = (row < this.nbrAreaRows - 1);
             var neighbors = [];
-            var addNeighbor = function (r, c) {
-                return neighbors.push(_this.areas[r * _this.nbrAreaColumns + c]);
+            var addNeighbor = function (r, c, cond) {
+                if(cond) {
+                    neighbors.push(_this.areas[r * _this.nbrAreaColumns + c]);
+                }
             };
-            if(hasTop) {
-                if(hasLeft) {
-                    addNeighbor(row - 1, column - 1);
-                }
-                addNeighbor(row - 1, column);
-                if(hasRight) {
-                    addNeighbor(row - 1, column + 1);
-                }
-            }
-            if(hasLeft) {
-                addNeighbor(row, column - 1);
-            }
-            addNeighbor(row, column);
-            if(hasRight) {
-                addNeighbor(row, column + 1);
-            }
-            if(hasBottom) {
-                if(hasLeft) {
-                    addNeighbor(row + 1, column - 1);
-                }
-                addNeighbor(row + 1, column);
-                if(hasRight) {
-                    addNeighbor(row + 1, column + 1);
-                }
-            }
+            addNeighbor(row - 1, column - 1, hasTop && hasLeft);
+            addNeighbor(row - 1, column, hasTop);
+            addNeighbor(row - 1, column + 1, hasTop && hasRight);
+            addNeighbor(row, column - 1, hasLeft);
+            addNeighbor(row, column, true);
+            addNeighbor(row, column + 1, hasRight);
+            addNeighbor(row + 1, column - 1, hasBottom && hasLeft);
+            addNeighbor(row + 1, column, hasBottom);
+            addNeighbor(row + 1, column + 1, hasBottom && hasRight);
             return neighbors;
         };
         Engine.prototype.computeAreaNumber = function (p) {
@@ -118,20 +103,15 @@ var Reactor;
             return this.nbrAreaColumns * row + column;
         };
         Engine.prototype.updateParticlePosition = function (particle, elapsedTimeMs) {
-            particle.fx = particle.fy = 0;
-            this.computeInfluenceOnParticle(particle);
             var dt = elapsedTimeMs / 1000;
             particle.vx += particle.fx / particle.type.mass * dt;
             particle.vy += particle.fy / particle.type.mass * dt;
             particle.x += particle.vx * dt;
             particle.y += particle.vy * dt;
         };
-        Engine.prototype.onParticleMoved = function (particle) {
+        Engine.prototype.updateParticleCurrentArea = function (particle) {
             var previousArea = particle.currentArea;
-            var newArea = this.areas[this.computeAreaNumber(particle)];
-            if(!newArea) {
-                newArea = this.limbo;
-            }
+            var newArea = this.areas[this.computeAreaNumber(particle)] || this.limbo;
             if(previousArea != newArea) {
                 if(previousArea) {
                     previousArea.particles.remove(particle);
@@ -141,118 +121,22 @@ var Reactor;
             }
         };
         Engine.prototype.computeInfluenceOnParticle = function (particle) {
-            particle.fx = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vx;
-            particle.fy = this.parameters.heatLevel * MathUtils.random2() - particle.type.viscosity * particle.vy;
-            this.addInfluenceFromOtherParticles(particle);
-            this.addInfluenceFromWalls(particle);
-        };
-        Engine.prototype.addInfluenceFromOtherParticles = function (p1) {
-            var _this = this;
-            var boundParticles = p1.bondEndPoints.filter(function (ep) {
-                return ep.isBound();
-            }).map(function (ep) {
-                return ep.boundParticle;
+            var particlesNearby = this.getParticlesNearby(particle);
+            particle.fx = particle.fy = 0;
+            _.each(this.components, function (c) {
+                return c.addInfluenceOnParticle(particle, particlesNearby);
             });
+        };
+        Engine.prototype.getParticlesNearby = function (p1) {
+            var particlesNearby = [];
             _.each(p1.currentArea.surroundingAreas, function (area) {
                 area.particles.each(function (p2) {
                     if(p1.id != p2.id) {
-                        var p2Index = boundParticles.indexOf(p2);
-                        var bondExists = (p2Index >= 0);
-                        if(bondExists) {
-                            boundParticles.splice(p2Index, 1);
-                        }
-                        _this.addInfluenceFromParticle(p1, p2, bondExists);
+                        particlesNearby.push(p2);
                     }
                 });
             });
-            _.each(boundParticles, function (p2) {
-                _this.addInfluenceFromParticle(p1, p2, true);
-            });
-        };
-        Engine.prototype.addInfluenceFromParticle = function (p1, p2, bondExists) {
-            var _this = this;
-            var activeBond = null;
-            var boundEndPoint = null;
-            if(bondExists) {
-                boundEndPoint = _.find(p1.bondEndPoints, function (endPoint) {
-                    return endPoint.boundParticle == p2;
-                });
-                activeBond = boundEndPoint.bond;
-            }
-            var dx = p1.x - p2.x;
-            var dy = p1.y - p2.y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
-            if(bondExists) {
-                if(distance > activeBond.maxRange) {
-                    var otherEndPoint = boundEndPoint.boundEndPoint;
-                    otherEndPoint.bond = null;
-                    otherEndPoint.boundParticle = null;
-                    otherEndPoint.boundEndPoint = null;
-                    boundEndPoint.bond = null;
-                    boundEndPoint.boundParticle = null;
-                    boundEndPoint.boundEndPoint = null;
-                    activeBond = null;
-                    bondExists = false;
-                }
-            } else {
-                _.each(p1.bondEndPoints, function (endPoint) {
-                    if(bondExists || endPoint.isBound()) {
-                        return;
-                    }
-                    _.each(p2.bondEndPoints, function (otherEndPoint) {
-                        if(bondExists || otherEndPoint.isBound() || distance > _this.maxBondRange) {
-                            return;
-                        }
-                        var possibleBond = _this.parameters.possibleBondsBetweenEndPoints[endPoint.name][otherEndPoint.name];
-                        if(possibleBond && distance <= possibleBond.maxRange) {
-                            endPoint.bond = possibleBond;
-                            endPoint.boundParticle = p2;
-                            endPoint.boundEndPoint = otherEndPoint;
-                            otherEndPoint.bond = possibleBond;
-                            otherEndPoint.boundParticle = p1;
-                            otherEndPoint.boundEndPoint = endPoint;
-                            activeBond = possibleBond;
-                            bondExists = true;
-                        }
-                    });
-                });
-            }
-            if(bondExists) {
-                this.addInfluenceFromBond(p1, p2, distance, activeBond);
-            } else {
-                var repulsiveForce = this.parameters.repulsiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, repulsiveForce);
-                var attractiveForce = this.parameters.attractiveForcesBetweenParticles[p1.type.name][p2.type.name];
-                this.addInfluenceFromForce(p1, p2, distance, attractiveForce);
-            }
-        };
-        Engine.prototype.addInfluenceFromForce = function (particle, forceOrigin, distance, force) {
-            var range = force.range;
-            if(force.amplitude == 0 || distance > range) {
-                return;
-            }
-            var coeff = force.amplitude * (range - distance) / range;
-            particle.fx += coeff * (particle.x - forceOrigin.x);
-            particle.fy += coeff * (particle.y - forceOrigin.y);
-        };
-        Engine.prototype.addInfluenceFromBond = function (particle, boundParticle, distance, bond) {
-            var coeff = bond.amplitude * (bond.neutralRange - distance) / bond.neutralRange;
-            particle.fx += coeff * (particle.x - boundParticle.x);
-            particle.fy += coeff * (particle.y - boundParticle.y);
-        };
-        Engine.prototype.addInfluenceFromWalls = function (particle) {
-            var range = this.parameters.wallsForce.range;
-            var amplitude = this.parameters.wallsForce.amplitude;
-            if(particle.x <= range) {
-                particle.fx += amplitude * (range - particle.x) / range;
-            } else if(particle.x >= this.parameters.sceneWidth - range) {
-                particle.fx += amplitude * (this.parameters.sceneWidth - range - particle.x) / range;
-            }
-            if(particle.y <= range) {
-                particle.fy += amplitude * (range - particle.y) / range;
-            } else if(particle.y >= this.parameters.sceneHeight - range) {
-                particle.fy += amplitude * (this.parameters.sceneHeight - range - particle.y) / range;
-            }
+            return particlesNearby;
         };
         return Engine;
     })();

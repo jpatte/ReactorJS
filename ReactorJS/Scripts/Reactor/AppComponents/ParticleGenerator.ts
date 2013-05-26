@@ -20,7 +20,11 @@ module Reactor
             this.newParticle = p => { };
 
             this.parameters = parameters;
-            this.parseScenario(parameters.particleGenerationScenario);
+        }
+
+        init()
+        {
+            this.parseScenario(this.parameters.particleGenerationScenario);
             this.isStarted = false;
         }
 

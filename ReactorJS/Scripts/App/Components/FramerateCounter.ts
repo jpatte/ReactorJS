@@ -9,6 +9,10 @@ module App
         previousFrameCounter = 0;
         currentFrameCounter = 0;
 
+        init()
+        {
+        }
+
         update(elapsedTimeMs: number, totalElapsedTimeMs: number): void
         {
             var sec = Math.floor(totalElapsedTimeMs / 1000);

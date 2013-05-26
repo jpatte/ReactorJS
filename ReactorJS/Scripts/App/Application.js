@@ -22,9 +22,12 @@ var App;
                 new App.FramerateCounter(), 
                 
             ];
+            _.each(this.components, function (c) {
+                return c.init();
+            });
             setInterval(function () {
                 _this.update();
-                _this.draw();
+                _this.render();
             }, 1000 / Application.Framerate);
         };
         Application.prototype.update = function () {
@@ -36,7 +39,7 @@ var App;
                 return c.update(elapsedTimeMs, newTotalElapsedTimeMs);
             });
         };
-        Application.prototype.draw = function () {
+        Application.prototype.render = function () {
             var _this = this;
             this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
             _.each(this.components, function (c) {

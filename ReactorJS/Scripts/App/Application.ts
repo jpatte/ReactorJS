@@ -40,9 +40,11 @@ module App
                 new FramerateCounter(),
             ];
         
+            _.each(this.components, (c: Component) => c.init());
+
             setInterval(() => {
               this.update();
-              this.draw();
+              this.render();
             }, 1000/Application.Framerate);
         }
 
@@ -56,7 +58,7 @@ module App
             _.each(this.components, (c: Component) => c.update(elapsedTimeMs, newTotalElapsedTimeMs));
         }
 
-        private draw(): void 
+        private render(): void 
         {
             this.scene.clearRect(0, 0, this.parameters.sceneWidth, this.parameters.sceneHeight);
   

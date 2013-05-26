@@ -153,6 +153,27 @@
       <DependentUpon>Site.less</DependentUpon>
     </Content>
     <Content Include="Global.asax" />
+    <Content Include="Scripts\Reactor\Base\DistancesGrid.js.map">
+      <DependentUpon>DistancesGrid.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.js.map">
+      <DependentUpon>MutualInteractionsComponent.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Reactor\Base\DistancesGrid.ts" />
+    <Content Include="Scripts\Reactor\Base\DistancesGrid.js">
+      <DependentUpon>DistancesGrid.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.ts" />
+    <Content Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.js">
+      <DependentUpon>MutualInteractionsComponent.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Reactor\EngineComponents\WallsEffectComponent.js.map">
+      <DependentUpon>WallsEffectComponent.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\WallsEffectComponent.ts" />
+    <Content Include="Scripts\Reactor\EngineComponents\NaturalParticlesMovementComponent.js.map">
+      <DependentUpon>NaturalParticlesMovementComponent.ts</DependentUpon>
+    </Content>
     <TypeScriptCompile Include="Scripts\App\Application.ts" />
     <Content Include="Scripts\App\Application.js.map">
       <DependentUpon>Application.ts</DependentUpon>
@@ -187,6 +208,13 @@
     </Content>
     <Content Include="Scripts\Reactor\AppComponents\Engine.js">
       <DependentUpon>Engine.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\NaturalParticlesMovementComponent.ts" />
+    <Content Include="Scripts\Reactor\EngineComponents\NaturalParticlesMovementComponent.js">
+      <DependentUpon>NaturalParticlesMovementComponent.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Reactor\EngineComponents\WallsEffectComponent.js">
+      <DependentUpon>WallsEffectComponent.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Reactor\Particle.js">
       <DependentUpon>Particle.ts</DependentUpon>
@@ -225,7 +253,6 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
-    <Folder Include="Scripts\Reactor\EngineComponents\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
