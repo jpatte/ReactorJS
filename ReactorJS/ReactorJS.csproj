@@ -153,19 +153,19 @@
       <DependentUpon>Site.less</DependentUpon>
     </Content>
     <Content Include="Global.asax" />
-    <Content Include="Scripts\Reactor\Base\DistancesGrid.js.map">
-      <DependentUpon>DistancesGrid.ts</DependentUpon>
+    <Content Include="Scripts\Reactor\EngineComponents\ParticlesInteractionsComponent.js.map">
+      <DependentUpon>ParticlesInteractionsComponent.ts</DependentUpon>
     </Content>
-    <Content Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.js.map">
-      <DependentUpon>MutualInteractionsComponent.ts</DependentUpon>
+    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\ParticlesInteractionsComponent.ts" />
+    <Content Include="Scripts\Reactor\EngineComponents\ParticlesBondingComponent.js.map">
+      <DependentUpon>ParticlesBondingComponent.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="Scripts\Reactor\Base\DistancesGrid.ts" />
-    <Content Include="Scripts\Reactor\Base\DistancesGrid.js">
-      <DependentUpon>DistancesGrid.ts</DependentUpon>
+    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\ParticlesBondingComponent.ts" />
+    <Content Include="Scripts\Reactor\EngineComponents\ParticlesBondingComponent.js">
+      <DependentUpon>ParticlesBondingComponent.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.ts" />
-    <Content Include="Scripts\Reactor\EngineComponents\MutualInteractionsComponent.js">
-      <DependentUpon>MutualInteractionsComponent.ts</DependentUpon>
+    <Content Include="Scripts\Reactor\EngineComponents\ParticlesInteractionsComponent.js">
+      <DependentUpon>ParticlesInteractionsComponent.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\Reactor\EngineComponents\WallsEffectComponent.js.map">
       <DependentUpon>WallsEffectComponent.ts</DependentUpon>
